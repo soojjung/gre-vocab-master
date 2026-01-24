@@ -81,18 +81,23 @@ dist/assets/index.js: 1,015 KB (모든 코드가 한 파일에)
 **파일**: `index.html`
 
 ```html
-<!-- DNS Prefetch & Preconnect (성능 최적화) -->
+<!-- DNS Prefetch -->
 <link rel="dns-prefetch" href="//firebaseapp.com" />
 <link rel="dns-prefetch" href="//googleapis.com" />
 <link rel="dns-prefetch" href="//texttospeech.googleapis.com" />
+
+<!-- Preconnect (중요 도메인) -->
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin />
+<link rel="preconnect" href="https://gre-vocab-app-1e0e1.firebaseapp.com" crossorigin />
+<link rel="preconnect" href="https://apis.google.com" crossorigin />
 ```
 
 **효과:**
 
 - `dns-prefetch`: DNS 조회를 미리 수행 (약 20-120ms 절약)
 - `preconnect`: DNS + TCP + TLS 핸드셰이크를 미리 수행 (약 100-500ms 절약)
+- Firebase Auth 로딩 시간 ~630ms 절약
 
 **언제 사용:**
 
@@ -218,6 +223,7 @@ export const analytics = isSupported().then((supported) => (supported ? getAnaly
 **효과:**
 
 - index.js 번들 크기 ~18KB 감소
+- 사용하지 않는 JS: 271KB → 190KB (-81KB)
 
 **Firestore Lite를 사용하지 않는 이유:**
 
@@ -228,7 +234,7 @@ export const analytics = isSupported().then((supported) => (supported ? getAnaly
 
 ### 6. 접근성 개선
 
-**파일**: `index.html`, `src/pages/HomePage.tsx`, 여러 페이지
+**파일**: `index.html`, `src/pages/HomePage.tsx`, `src/pages/Login.tsx`
 
 #### viewport 접근성
 
@@ -266,10 +272,13 @@ export const analytics = isSupported().then((supported) => (supported ? getAnaly
 </main>
 ```
 
+**적용된 페이지:** HomePage, Login
+
 **효과:**
 
 - 스크린 리더 사용자가 페이지 구조 파악 가능
 - SEO 개선
+- 접근성 점수: 86 → 98 (+12)
 
 #### 색상 대비율 개선
 
@@ -302,6 +311,48 @@ WCAG AA 기준: 4.5:1 (일반 텍스트), 3:1 (큰 텍스트)
 
 ---
 
+### 8. FCP/LCP 개선 - Auth 로딩 최적화
+
+**파일**: `src/App.tsx`
+
+**문제:**
+
+- `authLoading` 동안 스피너를 표시하여 FCP가 Firebase Auth 응답까지 지연됨
+- 느린 네트워크에서 13초+ 걸림
+
+**Before:**
+
+```tsx
+if (authLoading || dataLoading) {
+  return <Spinner />;  // 모든 사용자가 스피너 봄
+}
+if (!user) {
+  return <Login />;
+}
+```
+
+**After:**
+
+```tsx
+// authLoading 동안에도 user가 null이면 즉시 Login 표시
+if (!user) {
+  return <Login />;  // FCP 즉시 발생
+}
+
+// 로그인된 사용자만 데이터 로딩 중 스피너 표시
+if (dataLoading) {
+  return <Spinner />;
+}
+```
+
+**효과:**
+
+- 비로그인 사용자: 즉시 Login 페이지 렌더링 → FCP/LCP 대폭 개선
+- 로그인된 사용자: 잠깐 Login 화면 flash → auth 확인 후 자동으로 홈 이동
+- 대다수 첫 방문자(비로그인)의 체감 속도 크게 개선
+
+---
+
 ## 개선 후 (After)
 
 ### 번들 크기 비교
@@ -322,14 +373,24 @@ WCAG AA 기준: 4.5:1 (일반 텍스트), 3:1 (큰 텍스트)
 앱 업데이트: 509 KB만 다운로드 (vendor는 캐시)
 ```
 
-### 예상 개선 사항
+### 측정 결과
 
-| 카테고리 | Before | 예상 After |
-| -------- | ------ | ---------- |
-| 성능     | 55     | 60-70      |
-| 접근성   | 86     | 95+        |
+| 카테고리   | Before | After    | 변화 |
+| ---------- | ------ | -------- | ---- |
+| 성능       | 55     | 55       | -    |
+| 접근성     | 86     | **98**   | +12  |
+| 권장사항   | 100    | 100      | -    |
+| SEO        | 100    | 100      | -    |
 
-> 실제 점수는 배포 후 PageSpeed Insights에서 확인 필요
+| Core Web Vitals | Before | After  | 개선    |
+| --------------- | ------ | ------ | ------- |
+| FCP             | 14.8초 | 13.3초 | -1.5초  |
+| LCP             | 16.0초 | 14.3초 | -1.7초  |
+| Speed Index     | 14.8초 | 13.3초 | -1.5초  |
+
+| 항목              | Before | After | 개선   |
+| ----------------- | ------ | ----- | ------ |
+| 사용하지 않는 JS  | 271KB  | 190KB | -81KB  |
 
 ---
 

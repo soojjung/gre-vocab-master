@@ -30,10 +30,17 @@ function PageLoader() {
 }
 
 function ProtectedRoutes() {
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const { userData, loading: dataLoading, completeOnboarding } = useUserData(user?.uid);
 
-  if (authLoading || dataLoading) {
+  // FCP/LCP 최적화: authLoading 동안 스피너 대신 로그인 화면 표시
+  // 이미 로그인된 사용자는 auth 확인 후 자동으로 홈으로 이동
+  if (!user) {
+    return <Login />;
+  }
+
+  // 로그인된 사용자의 데이터 로딩 중
+  if (dataLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
@@ -42,10 +49,6 @@ function ProtectedRoutes() {
         </div>
       </div>
     );
-  }
-
-  if (!user) {
-    return <Login />;
   }
 
   if (!userData.onboardingComplete) {
