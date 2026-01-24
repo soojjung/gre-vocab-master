@@ -82,7 +82,7 @@ export function StatsPage() {
         <div className="bg-black text-white rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <div className="text-gray-400 text-sm">전체 진도율</div>
+              <div className="text-gray-500 text-sm">전체 진도율</div>
               <div className="text-3xl font-bold mt-1">{overallProgress.percentage}%</div>
             </div>
             <div className="w-16 h-16 rounded-full border-4 border-gray-700 flex items-center justify-center">
@@ -92,7 +92,7 @@ export function StatsPage() {
           <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
             <div className="h-full bg-white rounded-full transition-all duration-500" style={{ width: `${overallProgress.percentage}%` }} />
           </div>
-          <div className="text-sm text-gray-400 mt-2">
+          <div className="text-sm text-gray-500 mt-2">
             {overallProgress.mastered} / {overallProgress.total} 단어 완료
           </div>
         </div>

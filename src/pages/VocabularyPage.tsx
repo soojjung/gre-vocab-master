@@ -152,7 +152,7 @@ export function VocabularyPage() {
           })}
         </div>
 
-        {filteredWords.length === 0 && <div className="text-center text-gray-400 py-12">{searchQuery ? "검색 결과가 없습니다" : "단어가 없습니다"}</div>}
+        {filteredWords.length === 0 && <div className="text-center text-gray-500 py-12">{searchQuery ? "검색 결과가 없습니다" : "단어가 없습니다"}</div>}
       </div>
     </div>
   );

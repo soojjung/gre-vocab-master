@@ -11,6 +11,20 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // React 관련
+          "vendor-react": ["react", "react-dom", "react-router-dom"],
+          // Firebase 관련
+          "vendor-firebase": ["firebase/app", "firebase/auth", "firebase/firestore"],
+          // UI 라이브러리
+          "vendor-ui": ["lucide-react", "sonner"],
+        },
+      },
+    },
+  },
   plugins: [
     react(),
     tailwindcss(),

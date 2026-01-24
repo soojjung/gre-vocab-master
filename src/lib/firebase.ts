@@ -1,7 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
-import { getAnalytics, isSupported } from "firebase/analytics";
 
 // Firebase 설정 - .env 파일에서 가져옴
 const firebaseConfig = {
@@ -32,8 +31,5 @@ enableIndexedDbPersistence(db).catch((err) => {
     console.warn("Firestore persistence not supported");
   }
 });
-
-// Analytics (브라우저 환경에서만 초기화)
-export const analytics = isSupported().then((supported) => (supported ? getAnalytics(app) : null));
 
 export default app;

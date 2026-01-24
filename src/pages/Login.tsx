@@ -81,7 +81,7 @@ export function Login() {
       {/* 구분선 */}
       <div className="flex items-center gap-4 my-6">
         <div className="flex-1 h-px bg-gray-200" />
-        <span className="text-sm text-gray-400">또는</span>
+        <span className="text-sm text-gray-500">또는</span>
         <div className="flex-1 h-px bg-gray-200" />
       </div>
 

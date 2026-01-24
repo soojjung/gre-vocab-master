@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "sonner";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
@@ -7,15 +8,26 @@ import { ScrollToTop } from "@/components/ScrollToTop";
 import { Login } from "@/pages/Login";
 import { Onboarding } from "@/pages/Onboarding";
 import { HomePage } from "@/pages/HomePage";
-import { StudyPage } from "@/pages/StudyPage";
-import { VocabularyPage } from "@/pages/VocabularyPage";
-import { MyPageWrapper } from "@/pages/MyPageWrapper";
-import { QuizSelectPage } from "@/pages/QuizSelectPage";
-import { QuizPlayPage } from "@/pages/QuizPlayPage";
-import { QuizResultPage } from "@/pages/QuizResultPage";
-import { StatsPage } from "@/pages/StatsPage";
-import { LicensePage } from "@/pages/LicensePage";
-import { AboutPage } from "@/pages/AboutPage";
+
+// 코드 스플리팅: 필요할 때 로드
+const StudyPage = lazy(() => import("@/pages/StudyPage").then((m) => ({ default: m.StudyPage })));
+const VocabularyPage = lazy(() => import("@/pages/VocabularyPage").then((m) => ({ default: m.VocabularyPage })));
+const MyPageWrapper = lazy(() => import("@/pages/MyPageWrapper").then((m) => ({ default: m.MyPageWrapper })));
+const QuizSelectPage = lazy(() => import("@/pages/QuizSelectPage").then((m) => ({ default: m.QuizSelectPage })));
+const QuizPlayPage = lazy(() => import("@/pages/QuizPlayPage").then((m) => ({ default: m.QuizPlayPage })));
+const QuizResultPage = lazy(() => import("@/pages/QuizResultPage").then((m) => ({ default: m.QuizResultPage })));
+const StatsPage = lazy(() => import("@/pages/StatsPage").then((m) => ({ default: m.StatsPage })));
+const LicensePage = lazy(() => import("@/pages/LicensePage").then((m) => ({ default: m.LicensePage })));
+const AboutPage = lazy(() => import("@/pages/AboutPage").then((m) => ({ default: m.AboutPage })));
+
+// 로딩 컴포넌트
+function PageLoader() {
+  return (
+    <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="w-8 h-8 border-3 border-gray-200 border-t-black rounded-full animate-spin" />
+    </div>
+  );
+}
 
 function ProtectedRoutes() {
   const { user, loading: authLoading } = useAuth();
@@ -43,19 +55,21 @@ function ProtectedRoutes() {
   return (
     <>
       <ScrollToTop />
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/study" element={<StudyPage />} />
-        <Route path="/vocabulary" element={<VocabularyPage />} />
-        <Route path="/mypage" element={<MyPageWrapper />} />
-        <Route path="/mypage/license" element={<LicensePage />} />
-        <Route path="/mypage/about" element={<AboutPage />} />
-        <Route path="/quiz" element={<QuizSelectPage />} />
-        <Route path="/quiz/play" element={<QuizPlayPage />} />
-        <Route path="/quiz/result" element={<QuizResultPage />} />
-        <Route path="/stats" element={<StatsPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/study" element={<StudyPage />} />
+          <Route path="/vocabulary" element={<VocabularyPage />} />
+          <Route path="/mypage" element={<MyPageWrapper />} />
+          <Route path="/mypage/license" element={<LicensePage />} />
+          <Route path="/mypage/about" element={<AboutPage />} />
+          <Route path="/quiz" element={<QuizSelectPage />} />
+          <Route path="/quiz/play" element={<QuizPlayPage />} />
+          <Route path="/quiz/result" element={<QuizResultPage />} />
+          <Route path="/stats" element={<StatsPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </>
   );
 }

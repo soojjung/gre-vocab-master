@@ -18,11 +18,15 @@ export function HomePage() {
   return (
     <div className="relative">
       {/* 마이페이지 버튼 */}
-      <button onClick={() => navigate("/mypage")} className="absolute top-4 right-4 w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-200">
+      <button
+        onClick={() => navigate("/mypage")}
+        className="absolute top-4 right-4 w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-200"
+        aria-label="마이페이지"
+      >
         <User size={20} />
       </button>
 
-      <div className="min-h-screen bg-white px-5 py-8 pb-24">
+      <main className="min-h-screen bg-white px-5 py-8 pb-24">
         {/* 헤더 */}
         <header className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">단어의 신 GRE</h1>
@@ -89,7 +93,7 @@ export function HomePage() {
         )}
 
         {/* 액션 버튼들 */}
-        <div className="space-y-3 mt-8">
+        <nav className="space-y-3 mt-8" aria-label="주요 메뉴">
           <Button onClick={() => navigate("/study")} icon={<BookOpen size={20} />}>
             오늘의 학습 시작
           </Button>
@@ -102,8 +106,8 @@ export function HomePage() {
           <Button variant="secondary" onClick={() => navigate("/stats")} icon={<BarChart3 size={20} />}>
             학습 통계
           </Button>
-        </div>
-      </div>
+        </nav>
+      </main>
     </div>
   );
 }

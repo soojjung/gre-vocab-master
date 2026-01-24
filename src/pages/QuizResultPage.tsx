@@ -34,7 +34,7 @@ export function QuizResultPage() {
       <div className="bg-black text-white px-5 py-12 text-center">
         <div className="text-6xl mb-4">{message.emoji}</div>
         <div className="text-2xl font-bold mb-2">{message.text}</div>
-        <div className="text-gray-400">{quizType === "fill-blank" ? "빈칸 채우기" : "객관식"} 퀴즈</div>
+        <div className="text-gray-500">{quizType === "fill-blank" ? "빈칸 채우기" : "객관식"} 퀴즈</div>
       </div>
 
       {/* 점수 */}
