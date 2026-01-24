@@ -1,6 +1,6 @@
 # 단어의 신 GRE (GRE Vocab Master)
 
-GRE 시험 대비 단어 암기 PWA 플래시카드 앱입니다. Manhattan Prep과 Target Test Prep 기반의 **1,689개 필수 단어**를 Spaced Repetition(간격 반복) 학습법으로 효과적으로 암기할 수 있습니다.
+GRE 시험 대비 단어 암기 PWA 플래시카드 앱입니다. Manhattan Prep과 Target Test Prep 기반의 **1,560개 필수 단어**를 Spaced Repetition(간격 반복) 학습법으로 효과적으로 암기할 수 있습니다.
 
 ## 이런 분들께 추천합니다
 
@@ -22,7 +22,7 @@ GRE 시험 대비 단어 암기 PWA 플래시카드 앱입니다. Manhattan Prep
 
 - **빈칸 채우기**: 예문 속 빈칸에 들어갈 단어를 맞춰보세요
 - **객관식**: 한글 뜻을 보고 해당하는 영어 단어를 선택하세요
-- 10/20/50문제 중 선택하여 자신의 암기 수준을 확인할 수 있습니다
+- 20문제를 풀며 자신의 암기 수준을 확인할 수 있습니다
 
 ### 3. 단어장에서 복습하기
 
@@ -37,17 +37,18 @@ GRE 시험 대비 단어 암기 PWA 플래시카드 앱입니다. Manhattan Prep
 
 ## 주요 기능
 
-| 기능              | 설명                                      |
-| ----------------- | ----------------------------------------- |
-| 플래시카드 학습   | 영어 단어 → 한글 뜻 + 예문 확인           |
-| 자동 발음         | Web Speech API로 영어 단어 발음 재생      |
-| Spaced Repetition | 틀린 단어는 자주, 맞은 단어는 간격 늘려서 |
-| 랜덤 학습 순서    | 새 단어를 랜덤으로 섞어 학습 효과 향상    |
-| 퀴즈 모드         | 빈칸 채우기, 객관식 퀴즈                  |
-| 단어장            | 검색, 필터, 북마크 기능                   |
-| 통계              | 진도율, 일별 학습량, 취약 단어 분석       |
-| D-day             | 목표 시험일까지 남은 일수 표시            |
-| PWA               | 오프라인 지원, 홈 화면 설치 가능          |
+| 기능              | 설명                                       |
+| ----------------- | ------------------------------------------ |
+| 플래시카드 학습   | 영어 단어 → 한글 뜻 + 예문 확인            |
+| 자동 발음         | Google Cloud TTS로 일관된 영어 발음 재생   |
+| Spaced Repetition | 틀린 단어는 자주, 맞은 단어는 간격 늘려서  |
+| 랜덤 학습 순서    | 새 단어를 랜덤으로 섞어 학습 효과 향상     |
+| 퀴즈 모드         | 빈칸 채우기, 객관식 퀴즈                   |
+| 단어장            | 검색, 필터, 북마크 기능                    |
+| 통계              | 진도율, 일별 학습량, 취약 단어 분석        |
+| D-day             | 목표 시험일까지 남은 일수 표시             |
+| PWA               | 오프라인 지원, 홈 화면 설치 가능           |
+| 마이페이지        | 학습 설정, 문의하기, 개발자의 말, 라이선스 |
 
 ## 기술 스택
 
@@ -62,6 +63,8 @@ GRE 시험 대비 단어 암기 PWA 플래시카드 앱입니다. Manhattan Prep
 ### Backend & Auth
 
 - **Firebase** - 사용자 인증 및 데이터 저장
+- **Vercel Serverless Functions** - TTS API 프록시
+- **Google Cloud TTS** - 영어 발음 합성
 
 ### UI/UX
 
@@ -86,6 +89,9 @@ GRE 시험 대비 단어 암기 PWA 플래시카드 앱입니다. Manhattan Prep
 git clone <repository-url>
 cd GRE
 
+# 노드 버전 설정
+nvm use
+
 # 의존성 설치
 npm install
 
@@ -94,6 +100,24 @@ npm run dev
 ```
 
 브라우저에서 `http://localhost:5173`으로 접속하세요.
+
+### 환경 변수
+
+`.env` 파일을 생성하고 다음 변수를 설정하세요:
+
+```bash
+# Firebase
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+VITE_FIREBASE_MEASUREMENT_ID=
+
+# Google Cloud TTS (Vercel 환경변수로 설정)
+GOOGLE_TTS_API_KEY=
+```
 
 ### 빌드
 
@@ -127,14 +151,16 @@ npm run fix
 ## 프로젝트 구조
 
 ```
-src/
-├── components/      # 재사용 가능한 컴포넌트
-├── contexts/        # React Context (Auth, Quiz)
-├── data/           # 단어 데이터 (1,689개)
-├── hooks/          # 커스텀 훅
-├── lib/            # Firebase 설정, 날짜 유틸리티
-├── pages/          # 페이지 컴포넌트
-└── types.ts        # TypeScript 타입 정의
+├── api/             # Vercel Serverless Functions
+│   └── tts.ts       # Google Cloud TTS 프록시
+└── src/
+    ├── components/  # 재사용 가능한 컴포넌트
+    ├── contexts/    # React Context (Auth, Quiz)
+    ├── data/        # 단어 데이터 (1,560개)
+    ├── hooks/       # 커스텀 훅
+    ├── lib/         # Firebase 설정, 날짜 유틸리티
+    ├── pages/       # 페이지 컴포넌트
+    └── types.ts     # TypeScript 타입 정의
 ```
 
 ## 라이선스

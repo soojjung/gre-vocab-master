@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, BookOpen, BookMarked, LogOut, Volume2, VolumeX } from "lucide-react";
+import { ChevronRight, BookOpen, BookMarked, LogOut, Volume2, VolumeX, Mail, FileText, Heart } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserData } from "@/hooks/useUserData";
 import { getTodayString } from "@/lib/date";
@@ -70,7 +70,7 @@ export function MyPageWrapper() {
     <div className="min-h-screen bg-gray-50">
       <BackHeader title="마이페이지" onBack={() => navigate("/")} />
 
-      <div className="px-5 py-6 space-y-4">
+      <div className="px-5 py-6 space-y-5">
         {/* 프로필 */}
         <div className="bg-white rounded-2xl p-5">
           <div className="flex items-center gap-4">
@@ -79,7 +79,7 @@ export function MyPageWrapper() {
             </div>
             <div>
               <div className="font-medium text-gray-900">{user?.email || "사용자"}</div>
-              <div className="text-sm text-gray-500">연속 {userData.streak}일 학습 중</div>
+              <div className="text-sm text-gray-500">연속 {userData.streak}일 학습 중 🔥</div>
             </div>
           </div>
         </div>
@@ -157,18 +157,13 @@ export function MyPageWrapper() {
           <div className="px-5 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
-                  {userData.autoSpeak ? <Volume2 size={20} className="text-purple-600" /> : <VolumeX size={20} className="text-purple-600" />}
-                </div>
+                <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">{userData.autoSpeak ? <Volume2 size={20} className="text-purple-600" /> : <VolumeX size={20} className="text-purple-600" />}</div>
                 <div>
                   <div className="font-medium text-gray-900">자동 발음</div>
-                  <div className="text-sm text-gray-500">단어가 나타날 때 자동으로 발음 재생</div>
+                  <div className="text-xs text-gray-500">단어가 나타날 때 자동으로 발음 재생</div>
                 </div>
               </div>
-              <button
-                onClick={() => updateSettings({ autoSpeak: !userData.autoSpeak })}
-                className={`relative w-12 h-7 rounded-full transition-colors ${userData.autoSpeak ? "bg-black" : "bg-gray-300"}`}
-              >
+              <button onClick={() => updateSettings({ autoSpeak: !userData.autoSpeak })} className={`relative w-12 h-7 rounded-full transition-colors ${userData.autoSpeak ? "bg-black" : "bg-gray-300"}`}>
                 <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-transform ${userData.autoSpeak ? "left-6" : "left-1"}`} />
               </button>
             </div>
@@ -201,6 +196,38 @@ export function MyPageWrapper() {
             <ChevronRight size={20} className="text-gray-400" />
           </button>
         </div>
+
+        {/* 정보 */}
+        <div className="bg-white rounded-2xl overflow-hidden">
+          <div className="px-5 py-3 border-b border-gray-100">
+            <span className="text-sm font-medium text-gray-500">정보</span>
+          </div>
+
+          <button onClick={() => navigate("/mypage/about")} className="w-full px-5 py-4 flex items-center justify-between border-b border-gray-100 active:bg-gray-50">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-pink-100 rounded-xl flex items-center justify-center">
+                <Heart size={20} className="text-pink-500" />
+              </div>
+              <span className="font-medium text-gray-900">개발자의 말</span>
+            </div>
+            <ChevronRight size={20} className="text-gray-400" />
+          </button>
+
+          <button onClick={() => navigate("/mypage/license")} className="w-full px-5 py-4 flex items-center justify-between active:bg-gray-50">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
+                <FileText size={20} className="text-gray-600" />
+              </div>
+              <span className="font-medium text-gray-900">라이선스 및 출처</span>
+            </div>
+            <ChevronRight size={20} className="text-gray-400" />
+          </button>
+        </div>
+
+        {/* 문의하기 */}
+        <Button variant="secondary" onClick={() => (window.location.href = "mailto:sojjung3@gmail.com?subject=[단어의 신 GRE] 문의합니다")} icon={<Mail size={18} />}>
+          문의하기
+        </Button>
 
         {/* 로그아웃 */}
         <Button variant="danger" onClick={signOut} icon={<LogOut size={18} />}>

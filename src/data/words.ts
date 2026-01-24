@@ -6,7 +6,7 @@
  *   https://www.manhattanprep.com/gre/
  * - Target Test Prep GRE Vocabulary (PDF)
  *
- * Total: 1,689 words with definitions and examples
+ * Total: 1,560 words with definitions and examples
  */
 import { words1 } from "./words-1";
 import { words2 } from "./words-2";

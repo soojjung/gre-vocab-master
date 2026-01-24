@@ -5,29 +5,12 @@ import { words } from "@/data/words";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserData } from "@/hooks/useUserData";
 import { getTodayString } from "@/lib/date";
+import { speakWord } from "@/lib/tts";
+import { createShuffledIndices } from "@/lib/shuffle";
 import { Button } from "@/components/common";
 
 // 모듈 로드 시 한 번만 셔플 순서 생성 (렌더링 외부)
-function createShuffledIndices(length: number): number[] {
-  const indices = Array.from({ length }, (_, i) => i);
-  for (let i = indices.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [indices[i], indices[j]] = [indices[j], indices[i]];
-  }
-  return indices;
-}
 const SHUFFLED_WORD_INDICES = createShuffledIndices(words.length);
-
-// 영어 발음 재생 함수
-function speakWord(word: string) {
-  // 이전 발음 중지
-  speechSynthesis.cancel();
-
-  const utterance = new SpeechSynthesisUtterance(word);
-  utterance.lang = "en-US";
-  utterance.rate = 0.9;
-  speechSynthesis.speak(utterance);
-}
 
 export function StudyPage() {
   const navigate = useNavigate();

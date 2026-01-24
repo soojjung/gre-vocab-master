@@ -14,6 +14,8 @@ import { QuizSelectPage } from "@/pages/QuizSelectPage";
 import { QuizPlayPage } from "@/pages/QuizPlayPage";
 import { QuizResultPage } from "@/pages/QuizResultPage";
 import { StatsPage } from "@/pages/StatsPage";
+import { LicensePage } from "@/pages/LicensePage";
+import { AboutPage } from "@/pages/AboutPage";
 
 function ProtectedRoutes() {
   const { user, loading: authLoading } = useAuth();
@@ -46,6 +48,8 @@ function ProtectedRoutes() {
         <Route path="/study" element={<StudyPage />} />
         <Route path="/vocabulary" element={<VocabularyPage />} />
         <Route path="/mypage" element={<MyPageWrapper />} />
+        <Route path="/mypage/license" element={<LicensePage />} />
+        <Route path="/mypage/about" element={<AboutPage />} />
         <Route path="/quiz" element={<QuizSelectPage />} />
         <Route path="/quiz/play" element={<QuizPlayPage />} />
         <Route path="/quiz/result" element={<QuizResultPage />} />

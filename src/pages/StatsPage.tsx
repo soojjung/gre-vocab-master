@@ -77,7 +77,7 @@ export function StatsPage() {
     <div className="min-h-screen bg-gray-50">
       <BackHeader title="학습 통계" onBack={() => navigate("/")} />
 
-      <div className="px-5 py-6 space-y-4">
+      <div className="px-5 py-6 space-y-5">
         {/* 요약 카드 */}
         <div className="bg-black text-white rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
