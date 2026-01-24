@@ -32,11 +32,15 @@ export interface UserData {
 
 // 기본 사용자 데이터
 export const getDefaultUserData = (): UserData => {
+  // 로컬 시간 기준으로 60일 후 날짜 계산
   const targetDate = new Date();
   targetDate.setDate(targetDate.getDate() + 60);
+  const year = targetDate.getFullYear();
+  const month = String(targetDate.getMonth() + 1).padStart(2, "0");
+  const day = String(targetDate.getDate()).padStart(2, "0");
 
   return {
-    targetDate: targetDate.toISOString().split("T")[0],
+    targetDate: `${year}-${month}-${day}`,
     dailyGoal: 25,
     progress: {},
     todayLearned: [],

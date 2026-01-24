@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getTodayString, getDateAfterDays } from "@/lib/date";
 
 interface OnboardingProps {
   onComplete: (targetDate: string, dailyGoal: number) => void;
@@ -6,11 +7,7 @@ interface OnboardingProps {
 
 export function Onboarding({ onComplete }: OnboardingProps) {
   const [step, setStep] = useState(1);
-  const [targetDate, setTargetDate] = useState(() => {
-    const date = new Date();
-    date.setDate(date.getDate() + 60);
-    return date.toISOString().split("T")[0];
-  });
+  const [targetDate, setTargetDate] = useState(() => getDateAfterDays(60));
   const [dailyGoal, setDailyGoal] = useState(25);
 
   const handleComplete = () => {
@@ -50,7 +47,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
             <p className="text-gray-500 text-sm mb-6">목표일을 설정하면 D-day를 계산해드려요</p>
 
             <div className="bg-gray-50 rounded-2xl p-6 mb-6">
-              <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} min={new Date().toISOString().split("T")[0]} className="w-full bg-white border border-gray-200 rounded-xl px-4 py-4 text-gray-900 text-lg focus:outline-none focus:ring-2 focus:ring-black" />
+              <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} min={getTodayString()} className="w-full bg-white border border-gray-200 rounded-xl px-4 py-4 text-gray-900 text-lg focus:outline-none focus:ring-2 focus:ring-black" />
 
               <div className="mt-4 text-center">
                 <div className="text-4xl font-bold text-black">D-{getDday()}</div>
@@ -61,15 +58,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
             {/* 빠른 선택 */}
             <div className="grid grid-cols-3 gap-2">
               {[30, 60, 90].map((days) => (
-                <button
-                  key={days}
-                  onClick={() => {
-                    const date = new Date();
-                    date.setDate(date.getDate() + days);
-                    setTargetDate(date.toISOString().split("T")[0]);
-                  }}
-                  className={`py-3 rounded-xl text-sm font-medium transition-colors ${getDday() === days ? "bg-black text-white" : "bg-gray-100 text-gray-600 active:bg-gray-200"}`}
-                >
+                <button key={days} onClick={() => setTargetDate(getDateAfterDays(days))} className={`py-3 rounded-xl text-sm font-medium transition-colors ${getDday() === days ? "bg-black text-white" : "bg-gray-100 text-gray-600 active:bg-gray-200"}`}>
                   {days}일 후
                 </button>
               ))}

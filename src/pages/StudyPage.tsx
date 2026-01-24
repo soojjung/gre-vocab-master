@@ -4,6 +4,7 @@ import { ChevronLeft, Home } from "lucide-react";
 import { words } from "@/data/words";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserData } from "@/hooks/useUserData";
+import { getTodayString } from "@/lib/date";
 import { Button } from "@/components/common";
 
 export function StudyPage() {
@@ -18,7 +19,7 @@ export function StudyPage() {
 
   // 학습할 단어 선택 (복습 대기 단어 우선, 그 다음 새 단어)
   const studyWords = useMemo(() => {
-    const today = new Date().toISOString().split("T")[0];
+    const today = getTodayString();
 
     const reviewWords = words.filter((word) => {
       const progress = userData.progress[String(word.id)];

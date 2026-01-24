@@ -1,12 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { doc, setDoc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { getTodayString, getYesterdayString, getLocalDateString } from "@/lib/date";
 import type { UserData, WordProgress } from "@/types";
 import { getDefaultUserData, SR_INTERVALS } from "@/types";
-
-function getTodayString(): string {
-  return new Date().toISOString().split("T")[0];
-}
 
 // 메인 훅 - Firestore 전용 (오프라인은 Firebase persistence가 처리)
 export function useUserData(userId?: string | null) {
@@ -32,9 +29,7 @@ export function useUserData(userId?: string | null) {
         const data = docSnap.data() as UserData;
         // 날짜가 바뀌면 todayLearned 초기화
         if (data.lastStudyDate !== getTodayString()) {
-          const yesterday = new Date();
-          yesterday.setDate(yesterday.getDate() - 1);
-          const yesterdayStr = yesterday.toISOString().split("T")[0];
+          const yesterdayStr = getYesterdayString();
           if (data.lastStudyDate !== yesterdayStr && data.lastStudyDate !== getTodayString()) {
             data.streak = 0;
           }
@@ -107,7 +102,7 @@ export function useUserData(userId?: string | null) {
           status: newStatus,
           correctCount: correct ? progress.correctCount + 1 : progress.correctCount,
           wrongCount: correct ? progress.wrongCount : progress.wrongCount + 1,
-          nextReview: nextReviewDate.toISOString().split("T")[0],
+          nextReview: getLocalDateString(nextReviewDate),
           interval: newInterval,
           lastStudied: today,
         };
@@ -116,9 +111,7 @@ export function useUserData(userId?: string | null) {
 
         let newStreak = prev.streak;
         if (prev.lastStudyDate !== today) {
-          const yesterday = new Date();
-          yesterday.setDate(yesterday.getDate() - 1);
-          const yesterdayStr = yesterday.toISOString().split("T")[0];
+          const yesterdayStr = getYesterdayString();
           newStreak = prev.lastStudyDate === yesterdayStr ? prev.streak + 1 : 1;
         }
 
