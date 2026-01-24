@@ -1,0 +1,26 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#000000"/>
+
+  <!-- Decorative elements -->
+  <circle cx="100" cy="100" r="200" fill="#111111"/>
+  <circle cx="1100" cy="530" r="250" fill="#111111"/>
+
+  <!-- Main content area -->
+  <rect x="80" y="180" width="400" height="280" rx="24" fill="#FFFFFF"/>
+
+  <!-- Card content - English word -->
+  <text x="280" y="300" font-family="system-ui, -apple-system, sans-serif" font-size="48" font-weight="700" fill="#000000" text-anchor="middle">ephemeral</text>
+  <text x="280" y="360" font-family="system-ui, -apple-system, sans-serif" font-size="24" fill="#666666" text-anchor="middle">덧없는, 일시적인</text>
+
+  <!-- App title -->
+  <text x="700" y="280" font-family="system-ui, -apple-system, sans-serif" font-size="64" font-weight="700" fill="#FFFFFF">단어의 신</text>
+  <text x="700" y="360" font-family="system-ui, -apple-system, sans-serif" font-size="80" font-weight="800" fill="#FFFFFF">GRE</text>
+
+  <!-- Subtitle -->
+  <text x="700" y="440" font-family="system-ui, -apple-system, sans-serif" font-size="28" fill="#999999">한국인을 위한 GRE 단어 암기 앱</text>
+
+  <!-- Word count badge -->
+  <rect x="700" y="470" width="180" height="50" rx="25" fill="#222222"/>
+  <text x="790" y="503" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="600" fill="#FFFFFF" text-anchor="middle">1,560 단어</text>
+</svg>

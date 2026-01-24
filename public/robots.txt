@@ -1,0 +1,10 @@
+# robots.txt for 단어의 신 GRE
+
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://gre-vocab-master.vercel.app/sitemap.xml
+
+# Disallow API routes
+Disallow: /api/
