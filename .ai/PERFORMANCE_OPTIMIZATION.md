@@ -431,24 +431,126 @@ useEffect(() => {
 
 ---
 
+### 10. LCP 개선 - HTML 사전 렌더링
+
+**파일**: `index.html`
+
+**문제:**
+
+- LCP 요소(`<h1>단어의 신 GRE</h1>`)가 JS 로드 후에야 렌더링됨
+- 요소 렌더링 지연: 2,520ms
+
+**Before:**
+
+```html
+<div id="root"></div>
+<script type="module" src="/src/main.tsx"></script>
+```
+
+**After:**
+
+```html
+<div id="root">
+  <!-- LCP 최적화: JS 로드 전 즉시 표시 -->
+  <main style="min-height:100vh;background:#fff;padding:48px 20px;display:flex;flex-direction:column;align-items:center">
+    <div style="width:64px;height:64px;background:#000;border-radius:16px;display:flex;align-items:center;justify-content:center;margin-bottom:16px">
+      <span style="color:#fff;font-size:24px;font-weight:700">G</span>
+    </div>
+    <h1 style="font-size:24px;font-weight:700;color:#111827;margin:0">단어의 신 GRE</h1>
+    <p style="color:#6b7280;margin-top:8px">1500 단어 정복의 시작</p>
+  </main>
+</div>
+```
+
+**효과:**
+
+- LCP 요소가 HTML 파싱 즉시 렌더링됨
+- React가 로드되면 자동으로 교체 (hydration)
+- 요소 렌더링 지연: 2,520ms → ~0ms
+
+---
+
+### 11. Firestore 지연 로딩 (로그인 후 로드)
+
+**파일**: `src/App.tsx`, `src/components/AuthenticatedApp.tsx`
+
+**문제:**
+
+- 로그인 전에도 `useUserData` 훅이 호출되어 Firestore가 로드됨
+- 사용하지 않는 JS: 124KB 낭비
+
+**Before:**
+
+```tsx
+// App.tsx - ProtectedRoutes
+function ProtectedRoutes() {
+  const { user } = useAuth();
+  const { userData } = useUserData(user?.uid);  // 항상 호출 → Firestore 항상 로드
+
+  if (!user) return <Login />;
+  // ...
+}
+```
+
+**After:**
+
+```tsx
+// App.tsx - Firestore 없이 로그인 체크만
+const AuthenticatedApp = lazy(() => import("@/components/AuthenticatedApp"));
+
+function ProtectedRoutes() {
+  const { user } = useAuth();
+
+  if (!user) return <Login />;  // Firestore 로드 안함
+
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <AuthenticatedApp userId={user.uid} />  // 로그인 후에만 Firestore 로드
+    </Suspense>
+  );
+}
+
+// AuthenticatedApp.tsx - Firestore 포함
+export function AuthenticatedApp({ userId }) {
+  const { userData } = useUserData(userId);  // 여기서 Firestore 로드
+  // ...
+}
+```
+
+**번들 크기 변화:**
+
+| 청크 | Before | After |
+|------|--------|-------|
+| index.js (초기 로드) | 512 KB | 194 KB |
+| AuthenticatedApp.js (로그인 후) | - | 319 KB |
+
+**효과:**
+
+- 초기 번들 크기 62% 감소 (512KB → 194KB)
+- 로그인 페이지에서 Firestore(325KB) 로드하지 않음
+- 첫 방문자 로딩 속도 대폭 개선
+
+---
+
 ## 개선 후 (After)
 
 ### 번들 크기 비교
 
-| 구분            | Before   | After            |
-| --------------- | -------- | ---------------- |
-| 메인 번들       | 1,015 KB | 509 KB           |
-| vendor-react    | -        | 47 KB (캐시)     |
-| vendor-firebase | -        | 403 KB (캐시)    |
-| vendor-ui       | -        | 40 KB (캐시)     |
-| 페이지 청크     | -        | ~46 KB (필요 시) |
+| 구분            | Before   | After                      |
+| --------------- | -------- | -------------------------- |
+| 메인 번들       | 1,015 KB | **194 KB** (로그인 페이지) |
+| AuthenticatedApp | -       | 319 KB (로그인 후 로드)    |
+| vendor-react    | -        | 47 KB (캐시)               |
+| vendor-firebase | -        | 325 KB (로그인 후 로드)    |
+| vendor-ui       | -        | 40 KB (캐시)               |
+| 페이지 청크     | -        | ~46 KB (필요 시)           |
 
-### 캐싱 효과
+### 로딩 시나리오
 
 ```
-첫 방문:     509 + 47 + 403 + 40 = 999 KB
-재방문:      캐시 히트 → 거의 0 KB
-앱 업데이트: 509 KB만 다운로드 (vendor는 캐시)
+비로그인 첫 방문:  194 + 47 + 40 = 281 KB (Firebase 제외!)
+로그인 클릭 후:    319 + 325 = 644 KB 추가 로드
+재방문:            캐시 히트 → 거의 0 KB
 ```
 
 ### 측정 결과
