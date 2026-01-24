@@ -160,7 +160,7 @@ export function useUserData(userId?: string | null) {
 
   // 설정 변경
   const updateSettings = useCallback(
-    (settings: { targetDate?: string; dailyGoal?: number }) => {
+    (settings: { targetDate?: string; dailyGoal?: number; autoSpeak?: boolean }) => {
       setUserData((prev) => ({
         ...prev,
         ...settings,

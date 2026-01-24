@@ -194,9 +194,9 @@ export function StatsPage() {
           </div>
         </div>
 
-        {/* 난이도별 진행률 */}
+        {/* 난이도별 암기 현황 */}
         <div className="bg-white rounded-2xl p-5">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">난이도별 진행률</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">난이도별 암기 현황</h3>
           <div className="space-y-4">
             <div>
               <div className="flex justify-between items-center mb-2">

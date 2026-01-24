@@ -1,45 +1,88 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, Home } from "lucide-react";
+import { ChevronLeft, Home, Volume2, VolumeX } from "lucide-react";
 import { words } from "@/data/words";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserData } from "@/hooks/useUserData";
 import { getTodayString } from "@/lib/date";
 import { Button } from "@/components/common";
 
+// 모듈 로드 시 한 번만 셔플 순서 생성 (렌더링 외부)
+function createShuffledIndices(length: number): number[] {
+  const indices = Array.from({ length }, (_, i) => i);
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+  return indices;
+}
+const SHUFFLED_WORD_INDICES = createShuffledIndices(words.length);
+
+// 영어 발음 재생 함수
+function speakWord(word: string) {
+  // 이전 발음 중지
+  speechSynthesis.cancel();
+
+  const utterance = new SpeechSynthesisUtterance(word);
+  utterance.lang = "en-US";
+  utterance.rate = 0.9;
+  speechSynthesis.speak(utterance);
+}
+
 export function StudyPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { userData, recordAnswer } = useUserData(user?.uid);
+  const { userData, recordAnswer, updateSettings } = useUserData(user?.uid);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [sessionComplete, setSessionComplete] = useState(false);
   const [sessionStats, setSessionStats] = useState({ correct: 0, wrong: 0 });
 
-  // 학습할 단어 선택 (복습 대기 단어 우선, 그 다음 새 단어)
+  // 학습할 단어 선택 (복습 대기 단어 우선, 그 다음 새 단어는 랜덤)
   const studyWords = useMemo(() => {
     const today = getTodayString();
 
+    // 1. 복습 대기 단어 (복습 날짜가 된 단어들)
     const reviewWords = words.filter((word) => {
       const progress = userData.progress[String(word.id)];
       return progress && progress.status === "learning" && progress.nextReview <= today;
     });
 
-    const newWords = words.filter((word) => {
-      const progress = userData.progress[String(word.id)];
-      return !progress || progress.status === "new";
-    });
+    // 2. 새 단어 (아직 학습하지 않은 단어들) - ID 집합으로 저장
+    const newWordIds = new Set(
+      words
+        .filter((word) => {
+          const progress = userData.progress[String(word.id)];
+          return !progress || progress.status === "new";
+        })
+        .map((w) => w.id)
+    );
 
-    return [...reviewWords, ...newWords].slice(0, userData.dailyGoal);
+    // 미리 섞인 순서대로 새 단어 정렬
+    const shuffledNewWords = SHUFFLED_WORD_INDICES.filter((idx) => newWordIds.has(words[idx].id)).map((idx) => words[idx]);
+
+    // 복습 단어 먼저, 그 다음 랜덤 새 단어
+    return [...reviewWords, ...shuffledNewWords].slice(0, userData.dailyGoal);
   }, [userData.progress, userData.dailyGoal]);
 
   const currentWord = studyWords[currentIndex];
   const progress = currentIndex + 1;
 
+  // 자동 발음 재생: 단어가 바뀌고 카드가 앞면일 때
+  useEffect(() => {
+    if (currentWord && userData.autoSpeak && !isFlipped) {
+      speakWord(currentWord.word);
+    }
+  }, [currentWord, userData.autoSpeak, isFlipped]);
+
   const handleFlip = useCallback(() => {
     setIsFlipped(true);
   }, []);
+
+  const toggleAutoSpeak = useCallback(() => {
+    updateSettings({ autoSpeak: !userData.autoSpeak });
+  }, [updateSettings, userData.autoSpeak]);
 
   const handleAnswer = useCallback(
     (correct: boolean) => {
@@ -152,9 +195,17 @@ export function StudyPage() {
         </div>
       </div>
 
+      {/* 발음 토글 버튼 */}
+      <div className="flex justify-end mt-6">
+        <button onClick={toggleAutoSpeak} className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors bg-gray-100 text-gray-600">
+          {userData.autoSpeak ? <Volume2 size={18} /> : <VolumeX size={18} />}
+          <span>자동 발음</span>
+        </button>
+      </div>
+
       {/* 답변 버튼 */}
       {isFlipped && (
-        <div className="flex gap-4 mt-8">
+        <div className="flex gap-4 mt-6">
           <button onClick={() => handleAnswer(false)} className="flex-1 bg-red-50 text-red-600 py-4 rounded-xl font-medium text-lg active:bg-red-100 transition-colors flex items-center justify-center gap-2">
             <span>몰라요</span>
             <span>✕</span>

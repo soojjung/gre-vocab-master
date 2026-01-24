@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, BookOpen, BookMarked, LogOut } from "lucide-react";
+import { ChevronRight, BookOpen, BookMarked, LogOut, Volume2, VolumeX } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserData } from "@/hooks/useUserData";
 import { getTodayString } from "@/lib/date";
@@ -121,7 +121,7 @@ export function MyPageWrapper() {
           </div>
 
           {/* 일일 목표 */}
-          <div className="px-5 py-4">
+          <div className="px-5 py-4 border-b border-gray-100">
             <div className="flex items-center justify-between">
               <div>
                 <div className="font-medium text-gray-900">일일 학습량</div>
@@ -150,6 +150,27 @@ export function MyPageWrapper() {
                   수정
                 </Button>
               )}
+            </div>
+          </div>
+
+          {/* 자동 발음 설정 */}
+          <div className="px-5 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                  {userData.autoSpeak ? <Volume2 size={20} className="text-purple-600" /> : <VolumeX size={20} className="text-purple-600" />}
+                </div>
+                <div>
+                  <div className="font-medium text-gray-900">자동 발음</div>
+                  <div className="text-sm text-gray-500">단어가 나타날 때 자동으로 발음 재생</div>
+                </div>
+              </div>
+              <button
+                onClick={() => updateSettings({ autoSpeak: !userData.autoSpeak })}
+                className={`relative w-12 h-7 rounded-full transition-colors ${userData.autoSpeak ? "bg-black" : "bg-gray-300"}`}
+              >
+                <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-transform ${userData.autoSpeak ? "left-6" : "left-1"}`} />
+              </button>
             </div>
           </div>
         </div>

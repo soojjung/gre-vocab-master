@@ -28,6 +28,7 @@ export interface UserData {
   lastStudyDate: string; // ISO date string
   streak: number; // 연속 학습일
   onboardingComplete: boolean; // 온보딩 완료 여부
+  autoSpeak: boolean; // 자동 발음 재생 여부
 }
 
 // 기본 사용자 데이터
@@ -47,6 +48,7 @@ export const getDefaultUserData = (): UserData => {
     lastStudyDate: "",
     streak: 0,
     onboardingComplete: false,
+    autoSpeak: false,
   };
 };
 
