@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, Home, Volume2, VolumeX } from "lucide-react";
+import { ChevronLeft, Home, Volume2 } from "lucide-react";
 import { words } from "@/data/words";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserData } from "@/hooks/useUserData";
@@ -137,7 +137,7 @@ export function StudyPage() {
     <div className="min-h-screen bg-white px-5 py-8 flex flex-col">
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-6">
-        <button onClick={() => navigate("/")} className="p-2 -ml-2 text-gray-600">
+        <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600">
           <ChevronLeft size={24} />
         </button>
         <div className="text-sm text-gray-600">
@@ -171,18 +171,27 @@ export function StudyPage() {
             <>
               <div className="text-2xl font-bold text-gray-900 mb-3">{currentWord.word}</div>
               <div className="text-xl text-gray-700 mb-5">{currentWord.meaning}</div>
-              <div className="text-sm text-gray-500 leading-relaxed px-2 mb-2">"{currentWord.example}"</div>
-              <div className="text-sm text-gray-400 leading-relaxed px-2">"{currentWord.exampleKo}"</div>
+              <div className="text-sm text-gray-500 leading-relaxed mb-2">"{currentWord.example}"</div>
+              <div className="text-sm text-gray-400 leading-relaxed mb-4">"{currentWord.exampleKo}"</div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  speakWord(currentWord.word);
+                }}
+                className="p-2 rounded-full bg-gray-200 text-gray-600 active:bg-gray-300"
+              >
+                <Volume2 size={18} />
+              </button>
             </>
           )}
         </div>
       </div>
 
-      {/* 발음 토글 버튼 */}
-      <div className="flex justify-end mt-6">
-        <button onClick={toggleAutoSpeak} className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors bg-gray-100 text-gray-600">
-          {userData.autoSpeak ? <Volume2 size={18} /> : <VolumeX size={18} />}
-          <span>자동 발음</span>
+      {/* 자동 발음 토글 */}
+      <div className="flex items-center justify-end gap-2 mt-6">
+        <span className="text-sm text-gray-600">자동 발음</span>
+        <button onClick={toggleAutoSpeak} className={`relative w-11 h-6 rounded-full transition-colors ${userData.autoSpeak ? "bg-black" : "bg-gray-300"}`}>
+          <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${userData.autoSpeak ? "translate-x-6" : "translate-x-1"}`} />
         </button>
       </div>
 

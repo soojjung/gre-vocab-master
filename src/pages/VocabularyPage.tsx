@@ -103,7 +103,7 @@ export function VocabularyPage() {
 
   return (
     <div className="min-h-screen bg-white pb-24">
-      <BackHeader title="단어장" onBack={() => navigate("/")} />
+      <BackHeader title="단어장" onBack={() => navigate(-1)} />
 
       <div className="px-5 pt-4">
         {/* 검색 */}
@@ -116,9 +116,9 @@ export function VocabularyPage() {
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
           {[
             { key: "all", label: "전체" },
-            { key: "learning", label: "학습중" },
-            { key: "mastered", label: "암기완료" },
-            { key: "bookmarked", label: "북마크" },
+            { key: "learning", label: "학습중 📖" },
+            { key: "mastered", label: "암기완료 ✔️" },
+            { key: "bookmarked", label: "북마크 🔖" },
           ].map((tab) => (
             <button key={tab.key} onClick={() => setFilter(tab.key as FilterType)} className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${filter === tab.key ? "bg-black text-white" : "bg-gray-100 text-gray-600"}`}>
               {tab.label}
@@ -140,12 +140,7 @@ export function VocabularyPage() {
                     </div>
                     <div className="text-sm text-gray-500 mt-1">{word.meaning}</div>
                   </div>
-                  {status.status !== "new" && (
-                    <div className="text-right ml-4">
-                      <div className={`text-sm font-medium ${status.rate >= 70 ? "text-green-500" : status.rate >= 40 ? "text-yellow-500" : "text-red-500"}`}>{status.rate}%</div>
-                      <div className="text-xs text-gray-400">{status.status === "mastered" ? "완료" : "학습중"}</div>
-                    </div>
-                  )}
+                  {status.status !== "new" && <span className={`text-sm font-medium ${status.status === "mastered" ? "text-green-500" : "text-gray-400"}`}>{status.status === "mastered" ? "암기완료" : "학습중"}</span>}
                 </div>
               </div>
             );
