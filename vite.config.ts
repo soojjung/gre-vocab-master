@@ -17,8 +17,8 @@ export default defineConfig({
         manualChunks: {
           // React 관련
           "vendor-react": ["react", "react-dom", "react-router-dom"],
-          // Firebase 관련
-          "vendor-firebase": ["firebase/app", "firebase/auth", "firebase/firestore"],
+          // Firebase 관련 (auth는 lazy loading을 위해 제외)
+          "vendor-firebase": ["firebase/app", "firebase/firestore"],
           // UI 라이브러리
           "vendor-ui": ["lucide-react", "sonner"],
         },
@@ -30,6 +30,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
+      injectRegister: false, // 수동 등록 (페이지 로드 후 등록으로 FCP 개선)
       includeAssets: ["favicon.ico", "apple-touch-icon.png"],
       manifest: {
         name: "단어의 신 GRE",

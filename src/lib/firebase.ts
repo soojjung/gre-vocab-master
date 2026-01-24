@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import type { Auth, GoogleAuthProvider as GoogleAuthProviderType } from "firebase/auth";
 import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
 
 // Firebase 설정 - .env 파일에서 가져옴
@@ -16,10 +16,28 @@ const firebaseConfig = {
 // Firebase 초기화
 const app = initializeApp(firebaseConfig);
 
-// Auth, Firestore 내보내기
-export const auth = getAuth(app);
-export const googleProvider = new GoogleAuthProvider();
+// Firestore (데이터 로딩에 필요하므로 즉시 초기화)
 export const db = getFirestore(app);
+
+// Auth lazy loading (90KB 절약)
+let authInstance: Auth | null = null;
+let googleProviderInstance: GoogleAuthProviderType | null = null;
+
+export const getAuthLazy = async (): Promise<Auth> => {
+  if (!authInstance) {
+    const { getAuth } = await import("firebase/auth");
+    authInstance = getAuth(app);
+  }
+  return authInstance;
+};
+
+export const getGoogleProviderLazy = async (): Promise<GoogleAuthProviderType> => {
+  if (!googleProviderInstance) {
+    const { GoogleAuthProvider } = await import("firebase/auth");
+    googleProviderInstance = new GoogleAuthProvider();
+  }
+  return googleProviderInstance;
+};
 
 // Firestore 오프라인 persistence 활성화
 enableIndexedDbPersistence(db).catch((err) => {

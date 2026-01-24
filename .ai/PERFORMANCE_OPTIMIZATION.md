@@ -353,6 +353,84 @@ if (dataLoading) {
 
 ---
 
+### 9. Firebase Auth SDK 지연 로딩 (Lazy Loading)
+
+**파일**: `src/lib/firebase.ts`, `src/contexts/AuthContext.tsx`, `vite.config.ts`
+
+**문제:**
+
+- Firebase Auth SDK (90KB)가 앱 시작 시 즉시 로드됨
+- auth/iframe.js 로딩에 1,930ms 소요
+- googleapis.com API 호출에 추가 2,315ms 소요
+
+**Before:**
+
+```typescript
+// firebase.ts - 정적 import
+import { getAuth, GoogleAuthProvider } from "firebase/auth";
+export const auth = getAuth(app);
+export const googleProvider = new GoogleAuthProvider();
+
+// vite.config.ts - vendor 청크에 포함
+manualChunks: {
+  "vendor-firebase": ["firebase/app", "firebase/auth", "firebase/firestore"],
+}
+```
+
+**After:**
+
+```typescript
+// firebase.ts - 동적 import
+let authInstance: Auth | null = null;
+
+export const getAuthLazy = async (): Promise<Auth> => {
+  if (!authInstance) {
+    const { getAuth } = await import("firebase/auth");
+    authInstance = getAuth(app);
+  }
+  return authInstance;
+};
+
+// AuthContext.tsx - 로그인 버튼 클릭 시에만 로드
+const signInWithGoogle = async () => {
+  await initializeAuth();  // 여기서 auth 로드
+  const auth = await getAuthLazy();
+  // ...
+};
+
+// vite.config.ts - auth를 vendor에서 제외
+manualChunks: {
+  "vendor-firebase": ["firebase/app", "firebase/firestore"],  // auth 제외
+}
+```
+
+**localStorage 최적화:**
+
+```typescript
+// 이전에 로그인한 사용자만 auth 자동 초기화
+useEffect(() => {
+  const wasLoggedIn = localStorage.getItem("wasLoggedIn");
+  if (wasLoggedIn) {
+    initializeAuth();  // 재방문 사용자는 자동 로드
+  }
+}, []);
+```
+
+**번들 크기 변화:**
+
+| 청크 | Before | After |
+|------|--------|-------|
+| vendor-firebase | 404 KB | 327 KB |
+| Firebase Auth (새 청크) | - | 78 KB (지연 로딩) |
+
+**효과:**
+
+- 첫 방문자: Firebase Auth 77KB가 초기 로드에서 제외
+- 로그인 버튼 클릭 시에만 Auth SDK 로드
+- 재방문 로그인 사용자: localStorage 체크로 자동 auth 초기화
+
+---
+
 ## 개선 후 (After)
 
 ### 번들 크기 비교

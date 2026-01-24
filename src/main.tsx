@@ -10,3 +10,12 @@ createRoot(document.getElementById("root")!).render(
     <Analytics />
   </StrictMode>
 );
+
+// Service Worker 등록 (페이지 로드 후 - FCP 개선)
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch((error) => {
+      console.warn("SW registration failed:", error);
+    });
+  });
+}

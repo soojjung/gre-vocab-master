@@ -1,8 +1,8 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { onAuthStateChanged, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut as firebaseSignOut, type User } from "firebase/auth";
+import { createContext, useContext, useEffect, useState, useRef, type ReactNode } from "react";
+import type { User } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
-import { auth, googleProvider, db } from "@/lib/firebase";
+import { db, getAuthLazy, getGoogleProviderLazy } from "@/lib/firebase";
 
 interface AuthContextType {
   user: User | null;
@@ -29,10 +29,18 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // 초기에는 false (로그인 화면 즉시 표시)
+  const authInitialized = useRef(false);
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+  // Auth 초기화 및 상태 구독 (지연 로딩)
+  const initializeAuth = async () => {
+    if (authInitialized.current) return;
+    authInitialized.current = true;
+
+    const auth = await getAuthLazy();
+    const { onAuthStateChanged } = await import("firebase/auth");
+
+    onAuthStateChanged(auth, async (user) => {
       setUser(user);
       setLoading(false);
 
@@ -50,14 +58,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
       }
     });
+  };
 
-    return () => unsubscribe();
+  // 이전에 로그인한 적 있으면 백그라운드에서 auth 초기화
+  useEffect(() => {
+    const wasLoggedIn = localStorage.getItem("wasLoggedIn");
+    if (wasLoggedIn) {
+      setLoading(true);
+      initializeAuth();
+    }
   }, []);
 
   const signInWithGoogle = async () => {
     try {
+      setLoading(true);
+      await initializeAuth();
+      const auth = await getAuthLazy();
+      const googleProvider = await getGoogleProviderLazy();
+      const { signInWithPopup } = await import("firebase/auth");
       await signInWithPopup(auth, googleProvider);
+      localStorage.setItem("wasLoggedIn", "true");
     } catch (error) {
+      setLoading(false);
       console.error("Google 로그인 오류:", error);
       throw error;
     }
@@ -65,8 +87,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const signInWithEmail = async (email: string, password: string) => {
     try {
+      setLoading(true);
+      await initializeAuth();
+      const auth = await getAuthLazy();
+      const { signInWithEmailAndPassword } = await import("firebase/auth");
       await signInWithEmailAndPassword(auth, email, password);
+      localStorage.setItem("wasLoggedIn", "true");
     } catch (error) {
+      setLoading(false);
       console.error("이메일 로그인 오류:", error);
       throw error;
     }
@@ -74,8 +102,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const signUpWithEmail = async (email: string, password: string) => {
     try {
+      setLoading(true);
+      await initializeAuth();
+      const auth = await getAuthLazy();
+      const { createUserWithEmailAndPassword } = await import("firebase/auth");
       await createUserWithEmailAndPassword(auth, email, password);
+      localStorage.setItem("wasLoggedIn", "true");
     } catch (error) {
+      setLoading(false);
       console.error("회원가입 오류:", error);
       throw error;
     }
@@ -83,7 +117,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const signOut = async () => {
     try {
+      const auth = await getAuthLazy();
+      const { signOut: firebaseSignOut } = await import("firebase/auth");
       await firebaseSignOut(auth);
+      localStorage.removeItem("wasLoggedIn");
     } catch (error) {
       console.error("로그아웃 오류:", error);
       throw error;
