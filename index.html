@@ -88,7 +88,16 @@
     </noscript>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- LCP 최적화: JS 로드 전 즉시 표시되는 사전 렌더링 콘텐츠 -->
+      <main style="min-height:100vh;background:#fff;padding:48px 20px;display:flex;flex-direction:column;align-items:center">
+        <div style="width:64px;height:64px;background:#000;border-radius:16px;display:flex;align-items:center;justify-content:center;margin-bottom:16px">
+          <span style="color:#fff;font-size:24px;font-weight:700">G</span>
+        </div>
+        <h1 style="font-size:24px;font-weight:700;color:#111827;margin:0">단어의 신 GRE</h1>
+        <p style="color:#6b7280;margin-top:8px">1500 단어 정복의 시작</p>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
