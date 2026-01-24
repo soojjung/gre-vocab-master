@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Home, Volume2 } from "lucide-react";
 import { words } from "@/data/words";
@@ -15,24 +15,25 @@ const SHUFFLED_WORD_INDICES = createShuffledIndices(words.length);
 export function StudyPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { userData, recordAnswer, updateSettings } = useUserData(user?.uid);
+  const { userData, recordAnswer, updateSettings, getOrCreateTodaySession, updateSessionProgress } = useUserData(user?.uid);
 
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [sessionComplete, setSessionComplete] = useState(false);
   const [sessionStats, setSessionStats] = useState({ correct: 0, wrong: 0 });
 
-  // 학습할 단어 선택 (복습 대기 단어 우선, 그 다음 새 단어는 랜덤)
-  const studyWords = useMemo(() => {
+  // 오늘 학습할 단어 ID 생성 (세션이 없을 때)
+  const generateWordIds = useMemo(() => {
     const today = getTodayString();
 
     // 1. 복습 대기 단어 (복습 날짜가 된 단어들)
-    const reviewWords = words.filter((word) => {
-      const progress = userData.progress[String(word.id)];
-      return progress && progress.status === "learning" && progress.nextReview <= today;
-    });
+    const reviewWordIds = words
+      .filter((word) => {
+        const progress = userData.progress[String(word.id)];
+        return progress && progress.status === "learning" && progress.nextReview <= today;
+      })
+      .map((w) => w.id);
 
-    // 2. 새 단어 (아직 학습하지 않은 단어들) - ID 집합으로 저장
+    // 2. 새 단어 (아직 학습하지 않은 단어들)
     const newWordIds = new Set(
       words
         .filter((word) => {
@@ -43,11 +44,45 @@ export function StudyPage() {
     );
 
     // 미리 섞인 순서대로 새 단어 정렬
-    const shuffledNewWords = SHUFFLED_WORD_INDICES.filter((idx) => newWordIds.has(words[idx].id)).map((idx) => words[idx]);
+    const shuffledNewWordIds = SHUFFLED_WORD_INDICES.filter((idx) => newWordIds.has(words[idx].id)).map((idx) => words[idx].id);
 
     // 복습 단어 먼저, 그 다음 랜덤 새 단어
-    return [...reviewWords, ...shuffledNewWords].slice(0, userData.dailyGoal);
+    return [...reviewWordIds, ...shuffledNewWordIds].slice(0, userData.dailyGoal);
   }, [userData.progress, userData.dailyGoal]);
+
+  // 오늘의 세션 (있으면 기존 것, 없으면 새로 생성)
+  const todaySession = useMemo(() => {
+    const today = getTodayString();
+    const existingSession = userData.todaySession;
+
+    // 오늘 세션이 이미 있고 완료되지 않았으면 반환
+    if (existingSession && existingSession.date === today && !existingSession.completed) {
+      return existingSession;
+    }
+
+    // 새 세션 필요
+    return null;
+  }, [userData.todaySession]);
+
+  // 세션이 없으면 생성 (한 번만 실행)
+  const sessionCreated = useRef(false);
+  useEffect(() => {
+    if (!todaySession && !sessionCreated.current && generateWordIds.length > 0) {
+      sessionCreated.current = true;
+      getOrCreateTodaySession(generateWordIds);
+    }
+  }, [todaySession, generateWordIds, getOrCreateTodaySession]);
+
+  // 현재 인덱스 (세션에서 가져오기)
+  const currentIndex = todaySession?.currentIndex ?? 0;
+
+  // 세션의 단어 목록 가져오기
+  const studyWords = useMemo(() => {
+    if (todaySession) {
+      return todaySession.wordIds.map((id) => words.find((w) => w.id === id)).filter((w): w is (typeof words)[0] => w !== undefined);
+    }
+    return [];
+  }, [todaySession]);
 
   const currentWord = studyWords[currentIndex];
   const progress = currentIndex + 1;
@@ -78,13 +113,16 @@ export function StudyPage() {
       }));
 
       if (currentIndex < studyWords.length - 1) {
-        setCurrentIndex((prev) => prev + 1);
+        // 다음 단어로 이동 (세션 업데이트 → currentIndex 자동 변경)
+        updateSessionProgress(currentIndex + 1);
         setIsFlipped(false);
       } else {
+        // 세션 완료
+        updateSessionProgress(currentIndex, true);
         setSessionComplete(true);
       }
     },
-    [currentWord, currentIndex, studyWords.length, recordAnswer]
+    [currentWord, currentIndex, studyWords.length, recordAnswer, updateSessionProgress]
   );
 
   // 세션 완료 화면

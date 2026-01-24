@@ -19,6 +19,14 @@ export interface WordProgress {
   lastStudied?: string; // ISO date string
 }
 
+// 오늘의 학습 세션
+export interface TodaySession {
+  date: string; // ISO date string
+  wordIds: number[]; // 오늘 학습할 단어 ID 목록
+  currentIndex: number; // 현재 진행 위치
+  completed: boolean; // 세션 완료 여부
+}
+
 // 전체 사용자 데이터
 export interface UserData {
   targetDate: string; // ISO date string (D-day 목표일)
@@ -29,6 +37,7 @@ export interface UserData {
   streak: number; // 연속 학습일
   onboardingComplete: boolean; // 온보딩 완료 여부
   autoSpeak: boolean; // 자동 발음 재생 여부
+  todaySession?: TodaySession; // 오늘의 학습 세션
 }
 
 // 기본 사용자 데이터

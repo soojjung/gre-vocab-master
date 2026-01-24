@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
-import { doc, setDoc, onSnapshot } from "firebase/firestore";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { getTodayString, getYesterdayString, getLocalDateString } from "@/lib/date";
-import type { UserData, WordProgress } from "@/types";
+import type { UserData, WordProgress, TodaySession } from "@/types";
 import { getDefaultUserData, SR_INTERVALS } from "@/types";
 
 // 메인 훅 - Firestore 전용 (오프라인은 Firebase persistence가 처리)
@@ -10,6 +10,7 @@ export function useUserData(userId?: string | null) {
   const [userData, setUserDataState] = useState<UserData>(getDefaultUserData());
   const [prevUserId, setPrevUserId] = useState(userId);
   const [loading, setLoading] = useState(!!userId);
+  const dataLoaded = useRef(false); // 데이터 로드 완료 여부
 
   // Adjust state during render when userId changes (React recommended pattern)
   if (userId !== prevUserId) {
@@ -19,33 +20,47 @@ export function useUserData(userId?: string | null) {
 
   useEffect(() => {
     if (!userId) {
+      dataLoaded.current = false;
+      return;
+    }
+
+    // 이미 로드했으면 스킵 (React StrictMode 대응)
+    if (dataLoaded.current) {
       return;
     }
 
     const userDataRef = doc(db, "users", userId, "data", "progress");
 
-    const unsubscribe = onSnapshot(userDataRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data() as UserData;
-        // 날짜가 바뀌면 todayLearned 초기화
-        if (data.lastStudyDate !== getTodayString()) {
-          const yesterdayStr = getYesterdayString();
-          if (data.lastStudyDate !== yesterdayStr && data.lastStudyDate !== getTodayString()) {
-            data.streak = 0;
-          }
-          data.todayLearned = [];
-        }
-        setUserDataState(data);
-      } else {
-        // 새 사용자: 기본 데이터 생성
-        const defaultData = getDefaultUserData();
-        setDoc(userDataRef, defaultData);
-        setUserDataState(defaultData);
-      }
-      setLoading(false);
-    });
+    const loadData = async () => {
+      try {
+        const docSnap = await getDoc(userDataRef);
 
-    return () => unsubscribe();
+        if (docSnap.exists()) {
+          const data = docSnap.data() as UserData;
+          // 날짜가 바뀌면 todayLearned 초기화
+          if (data.lastStudyDate !== getTodayString()) {
+            const yesterdayStr = getYesterdayString();
+            if (data.lastStudyDate !== yesterdayStr && data.lastStudyDate !== getTodayString()) {
+              data.streak = 0;
+            }
+            data.todayLearned = [];
+          }
+          setUserDataState(data);
+        } else {
+          // 새 사용자: 기본 데이터 생성
+          const defaultData = getDefaultUserData();
+          await setDoc(userDataRef, defaultData);
+          setUserDataState(defaultData);
+        }
+        dataLoaded.current = true;
+      } catch (error) {
+        console.error("[useUserData] Error loading data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
   }, [userId]);
 
   // Firestore에 저장
@@ -53,10 +68,15 @@ export function useUserData(userId?: string | null) {
     (updater: UserData | ((prev: UserData) => UserData)) => {
       setUserDataState((prev) => {
         const newData = typeof updater === "function" ? updater(prev) : updater;
+
+        // Firestore에 저장
         if (userId) {
           const userDataRef = doc(db, "users", userId, "data", "progress");
-          setDoc(userDataRef, newData);
+          setDoc(userDataRef, newData).catch((err) => {
+            console.error("[setUserData] Firestore save error:", err);
+          });
         }
+
         return newData;
       });
     },
@@ -188,6 +208,63 @@ export function useUserData(userId?: string | null) {
     setUserData(newData);
   }, [setUserData]);
 
+  // 오늘의 학습 세션 시작 또는 가져오기
+  const getOrCreateTodaySession = useCallback(
+    (wordIds: number[]): TodaySession => {
+      const today = getTodayString();
+      const existingSession = userData.todaySession;
+
+      // 오늘 세션이 이미 있고 완료되지 않았으면 반환
+      if (existingSession && existingSession.date === today && !existingSession.completed) {
+        return existingSession;
+      }
+
+      // 새 세션 생성
+      const newSession: TodaySession = {
+        date: today,
+        wordIds,
+        currentIndex: 0,
+        completed: false,
+      };
+
+      setUserData((prev) => ({
+        ...prev,
+        todaySession: newSession,
+      }));
+
+      return newSession;
+    },
+    [userData.todaySession, setUserData]
+  );
+
+  // 세션 진행 상황 업데이트
+  const updateSessionProgress = useCallback(
+    (currentIndex: number, completed: boolean = false) => {
+      setUserData((prev) => {
+        if (!prev.todaySession) return prev;
+        return {
+          ...prev,
+          todaySession: {
+            ...prev.todaySession,
+            currentIndex,
+            completed,
+          },
+        };
+      });
+    },
+    [setUserData]
+  );
+
+  // 오늘의 세션 가져오기 (있으면)
+  const getTodaySession = useCallback((): TodaySession | null => {
+    const today = getTodayString();
+    const session = userData.todaySession;
+    if (session && session.date === today && !session.completed) {
+      return session;
+    }
+    return null;
+  }, [userData.todaySession]);
+
   // D-day 계산
   const getDday = useCallback(() => {
     const target = new Date(userData.targetDate);
@@ -230,5 +307,8 @@ export function useUserData(userId?: string | null) {
     getDday,
     getReviewCount,
     getOverallProgress,
+    getOrCreateTodaySession,
+    updateSessionProgress,
+    getTodaySession,
   };
 }
