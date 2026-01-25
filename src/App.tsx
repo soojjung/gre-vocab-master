@@ -18,7 +18,12 @@ function PageLoader() {
 }
 
 function ProtectedRoutes() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  // 로딩 중: 스피너 표시 (redirect 결과 확인 중)
+  if (loading) {
+    return <PageLoader />;
+  }
 
   // 로그인 전: Login 페이지 표시 (Firestore 로드 안함)
   if (!user) {

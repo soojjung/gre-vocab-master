@@ -2,6 +2,7 @@
 import { createContext, useContext, useEffect, useState, useRef, type ReactNode } from "react";
 import type { User } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
+import { toast } from "sonner";
 import { db, getAuthLazy, getGoogleProviderLazy } from "@/lib/firebase";
 
 interface AuthContextType {
@@ -27,9 +28,20 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+// PWA standalone 모드 감지 (초기 렌더링용)
+const getIsStandalone = () => {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia('(display-mode: standalone)').matches
+    || (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+};
+
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(false); // 초기에는 false (로그인 화면 즉시 표시)
+  // PWA standalone이거나 이전 로그인 기록이 있으면 로딩으로 시작
+  const [loading, setLoading] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return getIsStandalone() || localStorage.getItem("wasLoggedIn") === "true";
+  });
   const authInitialized = useRef(false);
 
   // Auth 초기화 및 상태 구독 (지연 로딩)
@@ -48,6 +60,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     } catch (error) {
       console.error("Redirect 결과 처리 오류:", error);
+      toast.error("로그인에 실패했습니다. 다시 시도해주세요.");
       setLoading(false);
     }
 
@@ -78,12 +91,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // 이전에 로그인한 적 있거나 PWA standalone 모드면 auth 초기화
   useEffect(() => {
     const wasLoggedIn = localStorage.getItem("wasLoggedIn");
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
-      || (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+    const isStandalone = getIsStandalone();
 
     // PWA standalone 모드에서는 redirect 결과 확인을 위해 항상 초기화
     if (wasLoggedIn || isStandalone) {
-      setLoading(true);
       initializeAuth();
     }
   }, []);
@@ -96,8 +107,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const googleProvider = await getGoogleProviderLazy();
 
       // PWA standalone 모드 감지
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches
-        || (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+      const isStandalone = getIsStandalone();
 
       if (isStandalone) {
         // PWA에서는 redirect 방식 사용 (popup이 차단됨)
