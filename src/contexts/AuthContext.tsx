@@ -105,20 +105,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
       await initializeAuth();
       const auth = await getAuthLazy();
       const googleProvider = await getGoogleProviderLazy();
+      const { signInWithPopup, signInWithRedirect } = await import("firebase/auth");
 
-      // PWA standalone 모드 감지
-      const isStandalone = getIsStandalone();
-
-      if (isStandalone) {
-        // PWA에서는 redirect 방식 사용 (popup이 차단됨)
-        const { signInWithRedirect } = await import("firebase/auth");
-        localStorage.setItem("wasLoggedIn", "true");
-        await signInWithRedirect(auth, googleProvider);
-      } else {
-        // 일반 브라우저에서는 popup 방식 사용
-        const { signInWithPopup } = await import("firebase/auth");
+      try {
+        // popup을 먼저 시도 (PWA 포함)
         await signInWithPopup(auth, googleProvider);
         localStorage.setItem("wasLoggedIn", "true");
+      } catch (popupError) {
+        // popup 차단 시 redirect로 폴백
+        const errorMessage = popupError instanceof Error ? popupError.message : "";
+        if (errorMessage.includes("popup") || errorMessage.includes("cross-origin")) {
+          localStorage.setItem("wasLoggedIn", "true");
+          await signInWithRedirect(auth, googleProvider);
+        } else {
+          throw popupError;
+        }
       }
     } catch (error) {
       setLoading(false);
