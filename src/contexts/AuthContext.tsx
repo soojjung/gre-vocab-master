@@ -46,15 +46,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       // 새 사용자인 경우 Firestore에 문서 생성
       if (user) {
-        const userRef = doc(db, "users", user.uid);
-        const userSnap = await getDoc(userRef);
+        try {
+          const userRef = doc(db, "users", user.uid);
+          const userSnap = await getDoc(userRef);
 
-        if (!userSnap.exists()) {
-          await setDoc(userRef, {
-            email: user.email,
-            displayName: user.displayName,
-            createdAt: new Date().toISOString(),
-          });
+          if (!userSnap.exists()) {
+            await setDoc(userRef, {
+              email: user.email,
+              displayName: user.displayName,
+              createdAt: new Date().toISOString(),
+            });
+          }
+        } catch (error) {
+          console.error("Firestore 사용자 문서 생성 오류:", error);
         }
       }
     });
