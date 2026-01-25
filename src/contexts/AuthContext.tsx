@@ -38,7 +38,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
     authInitialized.current = true;
 
     const auth = await getAuthLazy();
-    const { onAuthStateChanged } = await import("firebase/auth");
+    const { onAuthStateChanged, getRedirectResult } = await import("firebase/auth");
+
+    // PWA redirect 결과 처리
+    try {
+      const result = await getRedirectResult(auth);
+      if (result?.user) {
+        localStorage.setItem("wasLoggedIn", "true");
+      }
+    } catch (error) {
+      console.error("Redirect 결과 처리 오류:", error);
+      setLoading(false);
+    }
 
     onAuthStateChanged(auth, async (user) => {
       setUser(user);
@@ -64,10 +75,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     });
   };
 
-  // 이전에 로그인한 적 있으면 백그라운드에서 auth 초기화
+  // 이전에 로그인한 적 있거나 PWA standalone 모드면 auth 초기화
   useEffect(() => {
     const wasLoggedIn = localStorage.getItem("wasLoggedIn");
-    if (wasLoggedIn) {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+      || (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+
+    // PWA standalone 모드에서는 redirect 결과 확인을 위해 항상 초기화
+    if (wasLoggedIn || isStandalone) {
       setLoading(true);
       initializeAuth();
     }
@@ -79,9 +94,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
       await initializeAuth();
       const auth = await getAuthLazy();
       const googleProvider = await getGoogleProviderLazy();
-      const { signInWithPopup } = await import("firebase/auth");
-      await signInWithPopup(auth, googleProvider);
-      localStorage.setItem("wasLoggedIn", "true");
+
+      // PWA standalone 모드 감지
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+        || (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+
+      if (isStandalone) {
+        // PWA에서는 redirect 방식 사용 (popup이 차단됨)
+        const { signInWithRedirect } = await import("firebase/auth");
+        localStorage.setItem("wasLoggedIn", "true");
+        await signInWithRedirect(auth, googleProvider);
+      } else {
+        // 일반 브라우저에서는 popup 방식 사용
+        const { signInWithPopup } = await import("firebase/auth");
+        await signInWithPopup(auth, googleProvider);
+        localStorage.setItem("wasLoggedIn", "true");
+      }
     } catch (error) {
       setLoading(false);
       console.error("Google 로그인 오류:", error);
