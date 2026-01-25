@@ -1,13 +1,12 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { toast } from "sonner";
-import { X, ChevronRight } from "lucide-react";
+import { X } from "lucide-react";
 import { words } from "@/data/words";
 import type { Word } from "@/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserData } from "@/hooks/useUserData";
 import { useQuiz } from "@/contexts/QuizContext";
-import { Button } from "@/components/common";
 
 interface QuizQuestion {
   word: Word;
@@ -57,11 +56,70 @@ export function QuizPlayPage() {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [results, setResults] = useState<{ word: Word; selectedIndex: number; correctIndex: number; isCorrect: boolean }[]>([]);
+  const resultsRef = useRef(results);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const TOAST_DURATION = 1500;
+
+  // ref를 최신 상태로 유지
+  useEffect(() => {
+    resultsRef.current = results;
+  }, [results]);
+
+  // 컴포넌트 언마운트 시 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  const goToNext = useCallback(() => {
+    if (currentIndex < questions.length - 1) {
+      setCurrentIndex((prev) => prev + 1);
+      setSelectedIndex(null);
+      setShowResult(false);
+    } else {
+      setQuizResults(resultsRef.current);
+      navigate("/quiz/result");
+    }
+  }, [currentIndex, questions.length, setQuizResults, navigate]);
+
+  const handleSelectOption = useCallback(
+    (index: number, question: QuizQuestion) => {
+      if (showResult) return;
+
+      setSelectedIndex(index);
+      setShowResult(true);
+
+      const isCorrect = index === question.correctIndex;
+
+      if (isCorrect) {
+        toast.success("정답입니다!", { duration: TOAST_DURATION });
+      } else {
+        toast.error(`오답! 정답: ${question.word.word}`, { duration: TOAST_DURATION });
+      }
+
+      setResults((prev) => [
+        ...prev,
+        {
+          word: question.word,
+          selectedIndex: index,
+          correctIndex: question.correctIndex,
+          isCorrect,
+        },
+      ]);
+
+      timeoutRef.current = setTimeout(goToNext, TOAST_DURATION);
+    },
+    [showResult, goToNext]
+  );
 
   // 로딩 중이면 로딩 화면 표시
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-dvh bg-white flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-gray-200 border-t-black rounded-full animate-spin" />
       </div>
     );
@@ -74,42 +132,6 @@ export function QuizPlayPage() {
 
   const currentQuestion = questions[currentIndex];
   const progress = ((currentIndex + 1) / questions.length) * 100;
-
-  const handleSelectOption = (index: number) => {
-    if (showResult) return;
-
-    setSelectedIndex(index);
-    setShowResult(true);
-
-    const isCorrect = index === currentQuestion.correctIndex;
-
-    if (isCorrect) {
-      toast.success("정답입니다!");
-    } else {
-      toast.error(`오답입니다. 정답: ${currentQuestion.word.word} - ${currentQuestion.word.meaning}`);
-    }
-
-    setResults((prev) => [
-      ...prev,
-      {
-        word: currentQuestion.word,
-        selectedIndex: index,
-        correctIndex: currentQuestion.correctIndex,
-        isCorrect,
-      },
-    ]);
-  };
-
-  const handleNext = () => {
-    if (currentIndex < questions.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-      setSelectedIndex(null);
-      setShowResult(false);
-    } else {
-      setQuizResults(results);
-      navigate("/quiz/result");
-    }
-  };
 
   const getBlankSentence = (example: string, word: string) => {
     const regex = new RegExp(`\\b${word}\\b`, "gi");
@@ -124,7 +146,7 @@ export function QuizPlayPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-dvh bg-white flex flex-col">
       {/* 상단 헤더 */}
       <header className="px-5 py-4 border-b border-gray-100">
         <div className="flex items-center justify-between mb-3">
@@ -159,7 +181,7 @@ export function QuizPlayPage() {
         {/* 보기 */}
         <div className="space-y-3">
           {currentQuestion.options.map((option, index) => (
-            <button key={option.id} onClick={() => handleSelectOption(index)} disabled={showResult} className={`w-full p-4 rounded-xl border-2 text-left transition-all ${getOptionStyle(index)}`}>
+            <button key={option.id} onClick={() => handleSelectOption(index, currentQuestion)} disabled={showResult} className={`w-full p-4 rounded-xl border-2 text-left transition-all ${getOptionStyle(index)}`}>
               <div className="flex items-center gap-3">
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
@@ -174,15 +196,6 @@ export function QuizPlayPage() {
           ))}
         </div>
       </div>
-
-      {/* 하단 버튼 */}
-      {showResult && (
-        <div className="px-5 py-4 border-t border-gray-100">
-          <Button onClick={handleNext} icon={<ChevronRight size={20} />}>
-            {currentIndex < questions.length - 1 ? "다음 문제" : "결과 보기"}
-          </Button>
-        </div>
-      )}
     </div>
   );
 }

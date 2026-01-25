@@ -15,7 +15,7 @@ export function StudyComplete({ stats, onGoHome, onStartReview }: StudyCompleteP
   const total = stats.correct + stats.wrong;
 
   return (
-    <div className="min-h-screen bg-white px-5 py-8 flex flex-col">
+    <div className="min-h-dvh bg-white px-5 py-8 flex flex-col">
       <div className="flex-1 flex flex-col items-center justify-center text-center">
         <div className="text-6xl mb-6">🎉</div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">학습 완료!</h2>

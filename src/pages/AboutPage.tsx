@@ -5,10 +5,10 @@ export function AboutPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 relative">
       <BackHeader title="개발자의 말" onBack={() => navigate("/mypage")} />
 
-      <div className="px-5 pt-6 pb-12">
+      <div className="px-5 pt-[calc(5rem+env(safe-area-inset-top))] pb-12">
         <div className="bg-white rounded-2xl p-6 space-y-6">
           <div className="text-center">
             <div className="text-4xl mb-2">👋</div>

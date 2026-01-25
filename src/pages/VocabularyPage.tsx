@@ -48,40 +48,20 @@ export function VocabularyPage() {
   // 단어 상세 모달
   if (selectedWord) {
     const wordStatus = getWordStatus(selectedWord.id);
-    const wordProgress = userData.progress[String(selectedWord.id)];
 
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white relative">
         <BackHeader title={selectedWord.word} onBack={() => setSelectedWord(null)} />
 
-        <div className="px-5 py-8 text-center">
+        <div className="px-5 py-8 pt-[calc(5rem+env(safe-area-inset-top))] text-center">
           <div className="text-4xl font-bold text-gray-900 mb-4">{selectedWord.word}</div>
           <div className="text-xl text-gray-600 mb-8">{selectedWord.meaning}</div>
 
           <div className="bg-gray-50 rounded-2xl p-6 text-left mb-6">
             <div className="text-sm text-gray-500 mb-2">예문</div>
-            <div className="text-gray-800">{selectedWord.example}</div>
+            <div className="text-gray-800 mb-2">{selectedWord.example}</div>
+            <div className="text-gray-500 text-sm">{selectedWord.exampleKo}</div>
           </div>
-
-          {wordProgress && (
-            <div className="bg-gray-50 rounded-2xl p-6 text-left">
-              <div className="text-sm text-gray-500 mb-3">학습 기록</div>
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <div className="text-2xl font-bold text-green-500">{wordProgress.correctCount}</div>
-                  <div className="text-xs text-gray-500">정답</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-red-500">{wordProgress.wrongCount}</div>
-                  <div className="text-xs text-gray-500">오답</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-gray-900">{wordStatus.rate}%</div>
-                  <div className="text-xs text-gray-500">정답률</div>
-                </div>
-              </div>
-            </div>
-          )}
 
           <button onClick={() => toggleBookmark(String(selectedWord.id))} className={`mt-6 px-6 py-3 rounded-xl font-medium flex items-center gap-2 mx-auto ${wordStatus.bookmarked ? "bg-yellow-100 text-yellow-700" : "bg-gray-100 text-gray-700"}`}>
             {wordStatus.bookmarked ? (
@@ -102,10 +82,10 @@ export function VocabularyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white pb-24">
+    <div className="min-h-screen bg-white pb-24 relative">
       <BackHeader title="단어장" onBack={() => navigate(-1)} />
 
-      <div className="px-5 pt-4">
+      <div className="px-5 pt-[calc(5rem+env(safe-area-inset-top))]">
         {/* 검색 */}
         <div className="relative mb-4">
           <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="단어 또는 뜻 검색" className="w-full bg-gray-100 rounded-xl px-4 py-3 pl-10 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black" />

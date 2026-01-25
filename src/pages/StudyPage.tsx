@@ -117,9 +117,7 @@ export function StudyPage() {
 
   // 복습 관련
   const reviewWords = useMemo(() => {
-    return sessionStats.wrongWordIds
-      .map((id) => words.find((w) => w.id === id))
-      .filter((w): w is (typeof words)[0] => w !== undefined);
+    return sessionStats.wrongWordIds.map((id) => words.find((w) => w.id === id)).filter((w): w is (typeof words)[0] => w !== undefined);
   }, [sessionStats.wrongWordIds]);
 
   const startReview = useCallback(() => {
@@ -141,7 +139,7 @@ export function StudyPage() {
   // 로딩
   if (loading) {
     return (
-      <div className="min-h-screen bg-white px-5 py-8 flex flex-col">
+      <div className="min-h-dvh bg-white px-5 py-8 flex flex-col">
         <div className="flex items-center justify-between mb-6">
           <div className="w-10 h-10 bg-gray-100 rounded animate-pulse" />
           <div className="w-16 h-5 bg-gray-100 rounded animate-pulse" />
@@ -165,9 +163,9 @@ export function StudyPage() {
     const reviewWord = reviewWords[reviewIndex];
 
     return (
-      <div className="min-h-screen bg-white px-5 py-8 flex flex-col">
-        <StudyHeader current={reviewIndex + 1} total={reviewWords.length} onBack={() => setReviewMode(false)} variant="review" />
-        <FlashCard word={reviewWord} isFlipped={isFlipped} onFlip={() => setIsFlipped(true)} variant="review" />
+      <div className="min-h-dvh bg-white px-5 py-8 flex flex-col">
+        <StudyHeader current={reviewIndex + 1} total={reviewWords.length} onBack={() => setReviewMode(false)} />
+        <FlashCard word={reviewWord} isFlipped={isFlipped} onFlip={() => setIsFlipped(true)} />
         {isFlipped && (
           <div className="mt-6">
             <Button onClick={handleReviewNext}>{reviewIndex < reviewWords.length - 1 ? "다음 단어" : "복습 완료"}</Button>
@@ -180,7 +178,7 @@ export function StudyPage() {
   // 단어 없음
   if (!currentWord) {
     return (
-      <div className="min-h-screen bg-white px-5 py-8 flex flex-col items-center justify-center">
+      <div className="min-h-dvh bg-white px-5 py-8 flex flex-col items-center justify-center">
         <p className="text-gray-500">학습할 단어가 없습니다.</p>
         <button onClick={() => navigate("/")} className="mt-4 text-black underline">
           돌아가기
@@ -191,7 +189,7 @@ export function StudyPage() {
 
   // 기본 학습 화면
   return (
-    <div className="min-h-screen bg-white px-5 py-8 flex flex-col">
+    <div className="min-h-dvh bg-white px-5 py-8 flex flex-col">
       <StudyHeader current={currentIndex + 1} total={studyWords.length} onBack={() => navigate(-1)} />
       <FlashCard word={currentWord} isFlipped={isFlipped} onFlip={handleFlip} />
 

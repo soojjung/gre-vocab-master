@@ -69,9 +69,9 @@ export function MyPageWrapper() {
   // 로딩 중일 때 스켈레톤 표시
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 relative">
         <BackHeader title="마이페이지" onBack={() => navigate("/")} />
-        <div className="px-5 pt-6 pb-12 space-y-5">
+        <div className="px-5 pt-[calc(5rem+env(safe-area-inset-top))] pb-12 space-y-5">
           <div className="bg-white rounded-2xl p-5">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 bg-gray-200 rounded-full animate-pulse" />
@@ -89,10 +89,10 @@ export function MyPageWrapper() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 relative">
       <BackHeader title="마이페이지" onBack={() => navigate("/")} />
 
-      <div className="px-5 pt-6 pb-12 space-y-5">
+      <div className="px-5 pt-[calc(5rem+env(safe-area-inset-top))] pb-12 space-y-5">
         {/* 프로필 */}
         <div className="bg-white rounded-2xl p-5">
           <div className="flex items-center gap-4">

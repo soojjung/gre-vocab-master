@@ -36,10 +36,10 @@ export function QuizSelectPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white relative">
       <BackHeader title="퀴즈 모드" onBack={() => navigate("/")} />
 
-      <div className="px-5 py-6">
+      <div className="px-5 py-6 pt-[calc(5rem+env(safe-area-inset-top))]">
         {/* 학습한 단어 수 안내 */}
         <div className="bg-gray-50 rounded-2xl p-5 mb-6">
           <div className="text-sm text-gray-600 mb-1">학습한 단어</div>
