@@ -10,7 +10,7 @@ import { Button } from "@/components/common";
 export function MyPageWrapper() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { userData, updateSettings } = useUserData(user?.uid);
+  const { userData, loading, updateSettings } = useUserData(user?.uid);
 
   const [isEditingDday, setIsEditingDday] = useState(false);
   const [isEditingGoal, setIsEditingGoal] = useState(false);
@@ -66,11 +66,33 @@ export function MyPageWrapper() {
     setIsEditingGoal(false);
   };
 
+  // 로딩 중일 때 스켈레톤 표시
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <BackHeader title="마이페이지" onBack={() => navigate("/")} />
+        <div className="px-5 pt-6 pb-12 space-y-5">
+          <div className="bg-white rounded-2xl p-5">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-gray-200 rounded-full animate-pulse" />
+              <div>
+                <div className="h-5 w-32 bg-gray-200 rounded animate-pulse" />
+                <div className="h-4 w-24 bg-gray-100 rounded animate-pulse mt-2" />
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl h-48 animate-pulse" />
+          <div className="bg-white rounded-2xl h-32 animate-pulse" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <BackHeader title="마이페이지" onBack={() => navigate("/")} />
 
-      <div className="px-5 py-6 space-y-5">
+      <div className="px-5 pt-6 pb-12 space-y-5">
         {/* 프로필 */}
         <div className="bg-white rounded-2xl p-5">
           <div className="flex items-center gap-4">

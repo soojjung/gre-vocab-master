@@ -1,6 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, Home, Volume2 } from "lucide-react";
 import { words } from "@/data/words";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserData } from "@/hooks/useUserData";
@@ -8,24 +7,28 @@ import { getTodayString } from "@/lib/date";
 import { speakWord } from "@/lib/tts";
 import { createShuffledIndices } from "@/lib/shuffle";
 import { Button } from "@/components/common";
-
-// 모듈 로드 시 한 번만 셔플 순서 생성 (렌더링 외부)
-const SHUFFLED_WORD_INDICES = createShuffledIndices(words.length);
+import { FlashCard, StudyComplete, StudyHeader, AnswerButtons } from "@/components/study";
 
 export function StudyPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { userData, recordAnswer, updateSettings, getOrCreateTodaySession, updateSessionProgress } = useUserData(user?.uid);
+  const { userData, loading, recordAnswer, updateSettings, getOrCreateTodaySession, updateSessionProgress } = useUserData(user?.uid);
+
+  // 오늘 날짜 기반 셔플 순서 (같은 날에는 항상 동일)
+  const todayShuffledIndices = useMemo(() => {
+    return createShuffledIndices(words.length, getTodayString());
+  }, []);
 
   const [isFlipped, setIsFlipped] = useState(false);
   const [sessionComplete, setSessionComplete] = useState(false);
-  const [sessionStats, setSessionStats] = useState({ correct: 0, wrong: 0 });
+  const [sessionStats, setSessionStats] = useState({ correct: 0, wrong: 0, wrongWordIds: [] as number[] });
+  const [reviewMode, setReviewMode] = useState(false);
+  const [reviewIndex, setReviewIndex] = useState(0);
 
-  // 오늘 학습할 단어 ID 생성 (세션이 없을 때)
+  // 오늘 학습할 단어 ID 생성
   const generateWordIds = useMemo(() => {
     const today = getTodayString();
 
-    // 1. 복습 대기 단어 (복습 날짜가 된 단어들)
     const reviewWordIds = words
       .filter((word) => {
         const progress = userData.progress[String(word.id)];
@@ -33,7 +36,6 @@ export function StudyPage() {
       })
       .map((w) => w.id);
 
-    // 2. 새 단어 (아직 학습하지 않은 단어들)
     const newWordIds = new Set(
       words
         .filter((word) => {
@@ -43,28 +45,22 @@ export function StudyPage() {
         .map((w) => w.id)
     );
 
-    // 미리 섞인 순서대로 새 단어 정렬
-    const shuffledNewWordIds = SHUFFLED_WORD_INDICES.filter((idx) => newWordIds.has(words[idx].id)).map((idx) => words[idx].id);
+    const shuffledNewWordIds = todayShuffledIndices.filter((idx) => newWordIds.has(words[idx].id)).map((idx) => words[idx].id);
 
-    // 복습 단어 먼저, 그 다음 랜덤 새 단어
     return [...reviewWordIds, ...shuffledNewWordIds].slice(0, userData.dailyGoal);
-  }, [userData.progress, userData.dailyGoal]);
+  }, [userData.progress, userData.dailyGoal, todayShuffledIndices]);
 
-  // 오늘의 세션 (있으면 기존 것, 없으면 새로 생성)
+  // 오늘의 세션
   const todaySession = useMemo(() => {
     const today = getTodayString();
     const existingSession = userData.todaySession;
-
-    // 오늘 세션이 이미 있고 완료되지 않았으면 반환
     if (existingSession && existingSession.date === today && !existingSession.completed) {
       return existingSession;
     }
-
-    // 새 세션 필요
     return null;
   }, [userData.todaySession]);
 
-  // 세션이 없으면 생성 (한 번만 실행)
+  // 세션이 없으면 생성
   const sessionCreated = useRef(false);
   useEffect(() => {
     if (!todaySession && !sessionCreated.current && generateWordIds.length > 0) {
@@ -73,10 +69,8 @@ export function StudyPage() {
     }
   }, [todaySession, generateWordIds, getOrCreateTodaySession]);
 
-  // 현재 인덱스 (세션에서 가져오기)
   const currentIndex = todaySession?.currentIndex ?? 0;
 
-  // 세션의 단어 목록 가져오기
   const studyWords = useMemo(() => {
     if (todaySession) {
       return todaySession.wordIds.map((id) => words.find((w) => w.id === id)).filter((w): w is (typeof words)[0] => w !== undefined);
@@ -85,18 +79,15 @@ export function StudyPage() {
   }, [todaySession]);
 
   const currentWord = studyWords[currentIndex];
-  const progress = currentIndex + 1;
 
-  // 자동 발음 재생: 단어가 바뀌고 카드가 앞면일 때
+  // 자동 발음
   useEffect(() => {
     if (currentWord && userData.autoSpeak && !isFlipped) {
       speakWord(currentWord.word);
     }
   }, [currentWord, userData.autoSpeak, isFlipped]);
 
-  const handleFlip = useCallback(() => {
-    setIsFlipped(true);
-  }, []);
+  const handleFlip = useCallback(() => setIsFlipped(true), []);
 
   const toggleAutoSpeak = useCallback(() => {
     updateSettings({ autoSpeak: !userData.autoSpeak });
@@ -110,14 +101,13 @@ export function StudyPage() {
       setSessionStats((prev) => ({
         correct: prev.correct + (correct ? 1 : 0),
         wrong: prev.wrong + (correct ? 0 : 1),
+        wrongWordIds: correct ? prev.wrongWordIds : [...prev.wrongWordIds, currentWord.id],
       }));
 
       if (currentIndex < studyWords.length - 1) {
-        // 다음 단어로 이동 (세션 업데이트 → currentIndex 자동 변경)
         updateSessionProgress(currentIndex + 1);
         setIsFlipped(false);
       } else {
-        // 세션 완료
         updateSessionProgress(currentIndex, true);
         setSessionComplete(true);
       }
@@ -125,41 +115,69 @@ export function StudyPage() {
     [currentWord, currentIndex, studyWords.length, recordAnswer, updateSessionProgress]
   );
 
-  // 세션 완료 화면
-  if (sessionComplete) {
-    const total = sessionStats.correct + sessionStats.wrong;
-    const percentage = total > 0 ? Math.round((sessionStats.correct / total) * 100) : 0;
+  // 복습 관련
+  const reviewWords = useMemo(() => {
+    return sessionStats.wrongWordIds
+      .map((id) => words.find((w) => w.id === id))
+      .filter((w): w is (typeof words)[0] => w !== undefined);
+  }, [sessionStats.wrongWordIds]);
 
+  const startReview = useCallback(() => {
+    setReviewMode(true);
+    setReviewIndex(0);
+    setIsFlipped(false);
+  }, []);
+
+  const handleReviewNext = useCallback(() => {
+    if (reviewIndex < reviewWords.length - 1) {
+      setReviewIndex((prev) => prev + 1);
+      setIsFlipped(false);
+    } else {
+      setReviewMode(false);
+      setSessionStats((prev) => ({ ...prev, wrongWordIds: [] }));
+    }
+  }, [reviewIndex, reviewWords.length]);
+
+  // 로딩
+  if (loading) {
     return (
       <div className="min-h-screen bg-white px-5 py-8 flex flex-col">
-        <div className="flex-1 flex flex-col items-center justify-center text-center">
-          <div className="text-6xl mb-6">{percentage >= 80 ? "🎉" : percentage >= 50 ? "👍" : "💪"}</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">학습 완료!</h2>
-          <p className="text-gray-500 mb-8">오늘도 수고했어요</p>
-
-          <div className="bg-gray-50 rounded-2xl p-6 w-full max-w-xs">
-            <div className="text-4xl font-bold text-gray-900 mb-2">{percentage}%</div>
-            <div className="text-sm text-gray-500 mb-4">정답률</div>
-            <div className="flex justify-center gap-8">
-              <div>
-                <div className="text-2xl font-bold text-green-500">{sessionStats.correct}</div>
-                <div className="text-xs text-gray-500">맞음</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-red-500">{sessionStats.wrong}</div>
-                <div className="text-xs text-gray-500">틀림</div>
-              </div>
-            </div>
-          </div>
+        <div className="flex items-center justify-between mb-6">
+          <div className="w-10 h-10 bg-gray-100 rounded animate-pulse" />
+          <div className="w-16 h-5 bg-gray-100 rounded animate-pulse" />
+          <div className="w-10" />
         </div>
-
-        <Button onClick={() => navigate("/")} icon={<Home size={20} />}>
-          홈으로 돌아가기
-        </Button>
+        <div className="h-1 bg-gray-100 rounded-full mb-8" />
+        <div className="flex justify-center">
+          <div className="w-full max-w-sm aspect-square rounded-3xl bg-gray-200 animate-pulse" />
+        </div>
       </div>
     );
   }
 
+  // 완료 화면
+  if (sessionComplete && !reviewMode) {
+    return <StudyComplete stats={sessionStats} onGoHome={() => navigate("/")} onStartReview={startReview} />;
+  }
+
+  // 복습 모드
+  if (reviewMode && reviewWords.length > 0) {
+    const reviewWord = reviewWords[reviewIndex];
+
+    return (
+      <div className="min-h-screen bg-white px-5 py-8 flex flex-col">
+        <StudyHeader current={reviewIndex + 1} total={reviewWords.length} onBack={() => setReviewMode(false)} variant="review" />
+        <FlashCard word={reviewWord} isFlipped={isFlipped} onFlip={() => setIsFlipped(true)} variant="review" />
+        {isFlipped && (
+          <div className="mt-6">
+            <Button onClick={handleReviewNext}>{reviewIndex < reviewWords.length - 1 ? "다음 단어" : "복습 완료"}</Button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // 단어 없음
   if (!currentWord) {
     return (
       <div className="min-h-screen bg-white px-5 py-8 flex flex-col items-center justify-center">
@@ -171,59 +189,11 @@ export function StudyPage() {
     );
   }
 
+  // 기본 학습 화면
   return (
     <div className="min-h-screen bg-white px-5 py-8 flex flex-col">
-      {/* 헤더 */}
-      <div className="flex items-center justify-between mb-6">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600">
-          <ChevronLeft size={24} />
-        </button>
-        <div className="text-sm text-gray-600">
-          <span className="font-medium text-gray-900">{progress}</span> / {studyWords.length}
-        </div>
-        <div className="w-10" />
-      </div>
-
-      {/* 진행률 바 */}
-      <div className="h-1 bg-gray-100 rounded-full mb-8 overflow-hidden">
-        <div className="h-full bg-black rounded-full transition-all duration-200" style={{ width: `${(progress / studyWords.length) * 100}%` }} />
-      </div>
-
-      {/* 플래시카드 */}
-      <div className="flex justify-center">
-        <div
-          onClick={!isFlipped ? handleFlip : undefined}
-          className={`
-            w-full max-w-sm aspect-square rounded-3xl px-8
-            flex flex-col items-center justify-center text-center
-            transition-all duration-200 cursor-pointer
-            ${isFlipped ? "bg-gray-50" : "bg-black text-white shadow-2xl active:scale-[0.98]"}
-          `}
-        >
-          {!isFlipped ? (
-            <>
-              <div className="text-3xl font-bold mb-4">{currentWord.word}</div>
-              <div className="text-sm text-gray-400">탭하여 뜻 보기</div>
-            </>
-          ) : (
-            <>
-              <div className="text-2xl font-bold text-gray-900 mb-3">{currentWord.word}</div>
-              <div className="text-xl text-gray-700 mb-5">{currentWord.meaning}</div>
-              <div className="text-sm text-gray-500 leading-relaxed mb-2">"{currentWord.example}"</div>
-              <div className="text-sm text-gray-400 leading-relaxed mb-4">"{currentWord.exampleKo}"</div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  speakWord(currentWord.word);
-                }}
-                className="p-2 rounded-full bg-gray-200 text-gray-600 active:bg-gray-300"
-              >
-                <Volume2 size={18} />
-              </button>
-            </>
-          )}
-        </div>
-      </div>
+      <StudyHeader current={currentIndex + 1} total={studyWords.length} onBack={() => navigate(-1)} />
+      <FlashCard word={currentWord} isFlipped={isFlipped} onFlip={handleFlip} />
 
       {/* 자동 발음 토글 */}
       <div className="flex items-center justify-end gap-2 mt-6">
@@ -233,19 +203,7 @@ export function StudyPage() {
         </button>
       </div>
 
-      {/* 답변 버튼 */}
-      {isFlipped && (
-        <div className="flex gap-4 mt-6">
-          <button onClick={() => handleAnswer(false)} className="flex-1 bg-red-50 text-red-600 py-4 rounded-xl font-medium text-lg active:bg-red-100 transition-colors flex items-center justify-center gap-2">
-            <span>몰라요</span>
-            <span>✕</span>
-          </button>
-          <button onClick={() => handleAnswer(true)} className="flex-1 bg-green-50 text-green-600 py-4 rounded-xl font-medium text-lg active:bg-green-100 transition-colors flex items-center justify-center gap-2">
-            <span>알아요</span>
-            <span>✓</span>
-          </button>
-        </div>
-      )}
+      {isFlipped && <AnswerButtons onAnswer={handleAnswer} />}
     </div>
   );
 }

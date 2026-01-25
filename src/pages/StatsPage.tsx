@@ -9,7 +9,7 @@ import { BackHeader } from "@/components/BackHeader";
 export function StatsPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { userData, getDday, getOverallProgress } = useUserData(user?.uid);
+  const { userData, loading, getDday, getOverallProgress } = useUserData(user?.uid);
 
   const stats = useMemo(() => {
     const progressEntries = Object.entries(userData.progress);
@@ -72,6 +72,23 @@ export function StatsPage() {
   const progressPercentage = (count: number, total: number) => {
     return total > 0 ? Math.round((count / total) * 100) : 0;
   };
+
+  // 로딩 중일 때 스켈레톤 표시
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <BackHeader title="학습 통계" onBack={() => navigate("/")} />
+        <div className="px-5 py-6 space-y-5">
+          <div className="bg-gray-300 rounded-2xl h-36 animate-pulse" />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-white rounded-2xl h-24 animate-pulse" />
+            <div className="bg-white rounded-2xl h-24 animate-pulse" />
+          </div>
+          <div className="bg-white rounded-2xl h-48 animate-pulse" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

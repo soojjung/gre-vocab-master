@@ -9,11 +9,26 @@ import { Button } from "@/components/common";
 export function HomePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { userData, getDday, getReviewCount, getOverallProgress } = useUserData(user?.uid);
+  const { userData, loading, getDday, getReviewCount, getOverallProgress } = useUserData(user?.uid);
 
   const overallProgress = useMemo(() => getOverallProgress(words.length), [getOverallProgress]);
   const dday = getDday();
   const reviewCount = getReviewCount();
+
+  // 로딩 중일 때 스켈레톤 표시
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white px-5 py-8">
+        <header className="mb-8">
+          <div className="h-8 w-40 bg-gray-200 rounded animate-pulse" />
+          <div className="h-5 w-56 bg-gray-100 rounded animate-pulse mt-2" />
+        </header>
+        <div className="bg-gray-200 rounded-2xl h-32 animate-pulse mb-6" />
+        <div className="bg-gray-100 rounded-2xl h-24 animate-pulse mb-4" />
+        <div className="bg-gray-100 rounded-2xl h-24 animate-pulse" />
+      </div>
+    );
+  }
 
   return (
     <div className="relative">

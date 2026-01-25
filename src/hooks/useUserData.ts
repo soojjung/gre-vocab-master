@@ -36,7 +36,11 @@ export function useUserData(userId?: string | null) {
         const docSnap = await getDoc(userDataRef);
 
         if (docSnap.exists()) {
-          const data = docSnap.data() as UserData;
+          const rawData = docSnap.data();
+          const defaultData = getDefaultUserData();
+          // 기본값과 병합하여 누락된 필드 채우기
+          const data: UserData = { ...defaultData, ...rawData } as UserData;
+
           // 날짜가 바뀌면 todayLearned 초기화
           if (data.lastStudyDate !== getTodayString()) {
             const yesterdayStr = getYesterdayString();
@@ -45,6 +49,13 @@ export function useUserData(userId?: string | null) {
             }
             data.todayLearned = [];
           }
+
+          // 누락된 필드가 있으면 Firebase에 저장 (마이그레이션)
+          const hasNewFields = Object.keys(defaultData).some((key) => !(key in rawData));
+          if (hasNewFields) {
+            await setDoc(userDataRef, data);
+          }
+
           setUserDataState(data);
         } else {
           // 새 사용자: 기본 데이터 생성
