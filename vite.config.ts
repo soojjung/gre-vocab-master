@@ -17,8 +17,8 @@ export default defineConfig({
         manualChunks: {
           // React 관련
           "vendor-react": ["react", "react-dom", "react-router-dom"],
-          // Firebase 관련 (auth는 lazy loading을 위해 제외)
-          "vendor-firebase": ["firebase/app", "firebase/firestore"],
+          // Supabase
+          "vendor-supabase": ["@supabase/supabase-js"],
           // UI 라이브러리
           "vendor-ui": ["lucide-react", "sonner"],
         },

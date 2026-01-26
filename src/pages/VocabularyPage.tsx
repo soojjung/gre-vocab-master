@@ -12,7 +12,7 @@ type FilterType = "all" | "learning" | "mastered" | "bookmarked";
 export function VocabularyPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { userData, toggleBookmark } = useUserData(user?.uid);
+  const { userData, toggleBookmark } = useUserData(user?.id);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");

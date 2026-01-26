@@ -14,7 +14,7 @@ const licenses: LicenseInfo[] = [
   { name: "Tailwind CSS", version: "4.x", license: "MIT License", url: "https://github.com/tailwindlabs/tailwindcss" },
   { name: "Lucide React", license: "ISC License", url: "https://github.com/lucide-icons/lucide" },
   { name: "React Router", version: "7.x", license: "MIT License", url: "https://github.com/remix-run/react-router" },
-  { name: "Firebase", version: "11.x", license: "Apache 2.0 License", url: "https://github.com/firebase/firebase-js-sdk" },
+  { name: "Supabase", version: "2.x", license: "MIT License", url: "https://github.com/supabase/supabase-js" },
   { name: "Sonner", license: "MIT License", url: "https://github.com/emilkowalski/sonner" },
 ];
 

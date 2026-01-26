@@ -9,7 +9,7 @@ import { Button } from "@/components/common";
 export function HomePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { userData, loading, getDday, getReviewCount, getOverallProgress } = useUserData(user?.uid);
+  const { userData, loading, getDday, getReviewCount, getOverallProgress } = useUserData(user?.id);
 
   const overallProgress = useMemo(() => getOverallProgress(words.length), [getOverallProgress]);
   const dday = getDday();

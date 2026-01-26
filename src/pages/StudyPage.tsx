@@ -12,7 +12,7 @@ import { FlashCard, StudyComplete, StudyHeader, AnswerButtons } from "@/componen
 export function StudyPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { userData, loading, recordAnswer, updateSettings, getOrCreateTodaySession, updateSessionProgress } = useUserData(user?.uid);
+  const { userData, loading, recordAnswer, updateSettings, getOrCreateTodaySession, updateSessionProgress } = useUserData(user?.id);
 
   // 오늘 날짜 기반 셔플 순서 (같은 날에는 항상 동일)
   const todayShuffledIndices = useMemo(() => {

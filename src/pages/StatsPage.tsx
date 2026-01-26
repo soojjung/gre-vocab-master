@@ -9,7 +9,7 @@ import { BackHeader } from "@/components/BackHeader";
 export function StatsPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { userData, loading, getDday, getOverallProgress } = useUserData(user?.uid);
+  const { userData, loading, getDday, getOverallProgress } = useUserData(user?.id);
 
   const stats = useMemo(() => {
     const progressEntries = Object.entries(userData.progress);

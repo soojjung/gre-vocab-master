@@ -10,7 +10,7 @@ import { Button } from "@/components/common";
 export function MyPageWrapper() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { userData, loading, updateSettings } = useUserData(user?.uid);
+  const { userData, loading, updateSettings } = useUserData(user?.id);
 
   const [isEditingDday, setIsEditingDday] = useState(false);
   const [isEditingGoal, setIsEditingGoal] = useState(false);

@@ -20,16 +20,16 @@
 | **Speed Index** | 14.8초 | **2.4초** | -84%   |
 | **접근성**      | 86     | **100**   | +14    |
 
-| 최적화                  | 효과                      | 영향 지표         |
-| ----------------------- | ------------------------- | ----------------- |
-| HTML 사전 렌더링        | LCP 즉시 표시             | LCP, FCP          |
-| Firestore 지연 로딩     | 초기 번들 62% 감소        | TBT, Speed Index  |
-| Firebase Auth 지연 로딩 | Auth SDK 78KB 지연 로드   | TBT, Speed Index  |
-| 코드 스플리팅           | 페이지별 청크 분리        | TBT               |
-| Vendor 청크 분리        | 라이브러리 캐시 최적화    | Speed Index       |
-| DNS Prefetch/Preconnect | 연결 시간 ~500ms 절약     | FCP, LCP          |
-| 폰트 비동기 로딩        | 렌더 블로킹 제거          | FCP               |
-| 캐시 헤더 설정          | 재방문 시 즉시 로드       | Speed Index       |
+| 최적화                  | 효과                    | 영향 지표        |
+| ----------------------- | ----------------------- | ---------------- |
+| HTML 사전 렌더링        | LCP 즉시 표시           | LCP, FCP         |
+| Firestore 지연 로딩     | 초기 번들 62% 감소      | TBT, Speed Index |
+| Firebase Auth 지연 로딩 | Auth SDK 78KB 지연 로드 | TBT, Speed Index |
+| 코드 스플리팅           | 페이지별 청크 분리      | TBT              |
+| Vendor 청크 분리        | 라이브러리 캐시 최적화  | Speed Index      |
+| DNS Prefetch/Preconnect | 연결 시간 ~500ms 절약   | FCP, LCP         |
+| 폰트 비동기 로딩        | 렌더 블로킹 제거        | FCP              |
+| 캐시 헤더 설정          | 재방문 시 즉시 로드     | Speed Index      |
 
 ---
 
@@ -61,7 +61,7 @@ React hydration 시 자동 교체됨.
 
 ---
 
-### 2. Firestore 지연 로딩 - 초기 번들 62% 감소
+### 2. Firestore 지연 로딩 - 초기 번들 62% 감소 (Firebase 사용했을 시)
 
 **효과: 초기 번들 512KB → 194KB**
 

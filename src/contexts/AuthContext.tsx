@@ -1,9 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useEffect, useState, useRef, type ReactNode } from "react";
-import type { User } from "firebase/auth";
-import { doc, setDoc, getDoc } from "firebase/firestore";
-import { toast } from "sonner";
-import { db, getAuthLazy, getGoogleProviderLazy } from "@/lib/firebase";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import type { User } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 
 interface AuthContextType {
   user: User | null;
@@ -28,100 +26,38 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-// PWA standalone 모드 감지 (초기 렌더링용)
-const getIsStandalone = () => {
-  if (typeof window === 'undefined') return false;
-  return window.matchMedia('(display-mode: standalone)').matches
-    || (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
-};
-
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
-  // PWA standalone이거나 이전 로그인 기록이 있으면 로딩으로 시작
-  const [loading, setLoading] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return getIsStandalone() || localStorage.getItem("wasLoggedIn") === "true";
-  });
-  const authInitialized = useRef(false);
+  const [loading, setLoading] = useState(true);
 
-  // Auth 초기화 및 상태 구독 (지연 로딩)
-  const initializeAuth = async () => {
-    if (authInitialized.current) return;
-    authInitialized.current = true;
-
-    const auth = await getAuthLazy();
-    const { onAuthStateChanged, getRedirectResult } = await import("firebase/auth");
-
-    // PWA redirect 결과 처리
-    try {
-      const result = await getRedirectResult(auth);
-      if (result?.user) {
-        localStorage.setItem("wasLoggedIn", "true");
-      }
-    } catch (error) {
-      console.error("Redirect 결과 처리 오류:", error);
-      toast.error("로그인에 실패했습니다. 다시 시도해주세요.");
-      setLoading(false);
-    }
-
-    onAuthStateChanged(auth, async (user) => {
-      setUser(user);
-      setLoading(false);
-
-      // 새 사용자인 경우 Firestore에 문서 생성
-      if (user) {
-        try {
-          const userRef = doc(db, "users", user.uid);
-          const userSnap = await getDoc(userRef);
-
-          if (!userSnap.exists()) {
-            await setDoc(userRef, {
-              email: user.email,
-              displayName: user.displayName,
-              createdAt: new Date().toISOString(),
-            });
-          }
-        } catch (error) {
-          console.error("Firestore 사용자 문서 생성 오류:", error);
-        }
-      }
-    });
-  };
-
-  // 이전에 로그인한 적 있거나 PWA standalone 모드면 auth 초기화
   useEffect(() => {
-    const wasLoggedIn = localStorage.getItem("wasLoggedIn");
-    const isStandalone = getIsStandalone();
+    // 현재 세션 확인
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
 
-    // PWA standalone 모드에서는 redirect 결과 확인을 위해 항상 초기화
-    if (wasLoggedIn || isStandalone) {
-      initializeAuth();
-    }
+    // 인증 상태 변화 구독
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const signInWithGoogle = async () => {
-    try {
-      setLoading(true);
-      await initializeAuth();
-      const auth = await getAuthLazy();
-      const googleProvider = await getGoogleProviderLazy();
-      const { signInWithPopup, signInWithRedirect } = await import("firebase/auth");
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
 
-      try {
-        // popup을 먼저 시도 (PWA 포함)
-        await signInWithPopup(auth, googleProvider);
-        localStorage.setItem("wasLoggedIn", "true");
-      } catch (popupError) {
-        // popup 차단 시 redirect로 폴백
-        const errorMessage = popupError instanceof Error ? popupError.message : "";
-        if (errorMessage.includes("popup") || errorMessage.includes("cross-origin")) {
-          localStorage.setItem("wasLoggedIn", "true");
-          await signInWithRedirect(auth, googleProvider);
-        } else {
-          throw popupError;
-        }
-      }
-    } catch (error) {
+    if (error) {
       setLoading(false);
       console.error("Google 로그인 오류:", error);
       throw error;
@@ -129,42 +65,32 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const signInWithEmail = async (email: string, password: string) => {
-    try {
-      setLoading(true);
-      await initializeAuth();
-      const auth = await getAuthLazy();
-      const { signInWithEmailAndPassword } = await import("firebase/auth");
-      await signInWithEmailAndPassword(auth, email, password);
-      localStorage.setItem("wasLoggedIn", "true");
-    } catch (error) {
-      setLoading(false);
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
       console.error("이메일 로그인 오류:", error);
       throw error;
     }
   };
 
   const signUpWithEmail = async (email: string, password: string) => {
-    try {
-      setLoading(true);
-      await initializeAuth();
-      const auth = await getAuthLazy();
-      const { createUserWithEmailAndPassword } = await import("firebase/auth");
-      await createUserWithEmailAndPassword(auth, email, password);
-      localStorage.setItem("wasLoggedIn", "true");
-    } catch (error) {
-      setLoading(false);
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (error) {
       console.error("회원가입 오류:", error);
       throw error;
     }
   };
 
   const signOut = async () => {
-    try {
-      const auth = await getAuthLazy();
-      const { signOut: firebaseSignOut } = await import("firebase/auth");
-      await firebaseSignOut(auth);
-      localStorage.removeItem("wasLoggedIn");
-    } catch (error) {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
       console.error("로그아웃 오류:", error);
       throw error;
     }

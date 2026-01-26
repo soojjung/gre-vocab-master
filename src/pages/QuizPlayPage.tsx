@@ -40,7 +40,7 @@ function generateQuestions(availableWords: Word[], count: number): QuizQuestion[
 export function QuizPlayPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { userData, loading } = useUserData(user?.uid);
+  const { userData, loading } = useUserData(user?.id);
   const { quizType, quizCount, setQuizResults } = useQuiz();
 
   const quizWords = useMemo(() => {

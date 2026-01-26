@@ -15,7 +15,7 @@ const QUIZ_COUNT = 20;
 export function QuizSelectPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { userData } = useUserData(user?.uid);
+  const { userData } = useUserData(user?.id);
   const { setQuizType, setQuizCount } = useQuiz();
 
   const [selectedType, setSelectedType] = useState<QuizType>("fill-blank");

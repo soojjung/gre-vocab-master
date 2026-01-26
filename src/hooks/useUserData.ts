@@ -1,21 +1,64 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { doc, setDoc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 import { getTodayString, getYesterdayString, getLocalDateString } from "@/lib/date";
 import type { UserData, WordProgress, TodaySession } from "@/types";
 import { getDefaultUserData, SR_INTERVALS } from "@/types";
 
-// 메인 훅 - Firestore 전용 (오프라인은 Firebase persistence가 처리)
+// Supabase DB row를 UserData로 변환
+function rowToUserData(row: {
+  streak: number;
+  last_study_date: string | null;
+  target_date: string | null;
+  daily_goal: number;
+  today_learned: string[];
+  onboarding_complete: boolean;
+  auto_speak: boolean;
+  today_session: TodaySession | null;
+  progress: Record<string, WordProgress>;
+}): UserData {
+  const defaultData = getDefaultUserData();
+  return {
+    targetDate: row.target_date ?? defaultData.targetDate,
+    dailyGoal: row.daily_goal,
+    progress: row.progress ?? {},
+    todayLearned: row.today_learned ?? [],
+    lastStudyDate: row.last_study_date ?? "",
+    streak: row.streak,
+    onboardingComplete: row.onboarding_complete,
+    autoSpeak: row.auto_speak,
+    todaySession: row.today_session ?? undefined,
+  };
+}
+
+// UserData를 Supabase DB row로 변환
+function userDataToRow(userData: UserData, userId: string) {
+  return {
+    user_id: userId,
+    streak: userData.streak,
+    last_study_date: userData.lastStudyDate || null,
+    target_date: userData.targetDate,
+    daily_goal: userData.dailyGoal,
+    today_learned: userData.todayLearned,
+    onboarding_complete: userData.onboardingComplete,
+    auto_speak: userData.autoSpeak,
+    today_session: userData.todaySession ?? null,
+    progress: userData.progress,
+    updated_at: new Date().toISOString(),
+  };
+}
+
+// 메인 훅 - Supabase 전용
 export function useUserData(userId?: string | null) {
   const [userData, setUserDataState] = useState<UserData>(getDefaultUserData());
   const [prevUserId, setPrevUserId] = useState(userId);
   const [loading, setLoading] = useState(!!userId);
-  const dataLoaded = useRef(false); // 데이터 로드 완료 여부
+  const dataLoaded = useRef(false);
 
-  // Adjust state during render when userId changes (React recommended pattern)
+  // userId 변경 감지
   if (userId !== prevUserId) {
     setPrevUserId(userId);
     setLoading(!!userId);
+    dataLoaded.current = false;
   }
 
   useEffect(() => {
@@ -24,22 +67,29 @@ export function useUserData(userId?: string | null) {
       return;
     }
 
-    // 이미 로드했으면 스킵 (React StrictMode 대응)
     if (dataLoaded.current) {
       return;
     }
 
-    const userDataRef = doc(db, "users", userId, "data", "progress");
-
     const loadData = async () => {
       try {
-        const docSnap = await getDoc(userDataRef);
+        const { data: row, error } = await supabase
+          .from("user_data")
+          .select("*")
+          .eq("user_id", userId)
+          .maybeSingle();
 
-        if (docSnap.exists()) {
-          const rawData = docSnap.data();
+        if (error) {
+          console.error("[useUserData] Error loading data:", error);
+        } else if (!row) {
+          // 데이터 없음 - 새 사용자
           const defaultData = getDefaultUserData();
-          // 기본값과 병합하여 누락된 필드 채우기
-          const data: UserData = { ...defaultData, ...rawData } as UserData;
+          const newRow = userDataToRow(defaultData, userId);
+
+          await supabase.from("user_data").insert(newRow);
+          setUserDataState(defaultData);
+        } else {
+          let data = rowToUserData(row);
 
           // 날짜가 바뀌면 todayLearned 초기화
           if (data.lastStudyDate !== getTodayString()) {
@@ -50,22 +100,12 @@ export function useUserData(userId?: string | null) {
             data.todayLearned = [];
           }
 
-          // 누락된 필드가 있으면 Firebase에 저장 (마이그레이션)
-          const hasNewFields = Object.keys(defaultData).some((key) => !(key in rawData));
-          if (hasNewFields) {
-            await setDoc(userDataRef, data);
-          }
-
           setUserDataState(data);
-        } else {
-          // 새 사용자: 기본 데이터 생성
-          const defaultData = getDefaultUserData();
-          await setDoc(userDataRef, defaultData);
-          setUserDataState(defaultData);
         }
+
         dataLoaded.current = true;
       } catch (error) {
-        console.error("[useUserData] Error loading data:", error);
+        console.error("[useUserData] Error:", error);
       } finally {
         setLoading(false);
       }
@@ -74,18 +114,23 @@ export function useUserData(userId?: string | null) {
     loadData();
   }, [userId]);
 
-  // Firestore에 저장
+  // Supabase에 저장
   const setUserData = useCallback(
     (updater: UserData | ((prev: UserData) => UserData)) => {
       setUserDataState((prev) => {
         const newData = typeof updater === "function" ? updater(prev) : updater;
 
-        // Firestore에 저장
+        // Supabase에 저장
         if (userId) {
-          const userDataRef = doc(db, "users", userId, "data", "progress");
-          setDoc(userDataRef, newData).catch((err) => {
-            console.error("[setUserData] Firestore save error:", err);
-          });
+          const row = userDataToRow(newData, userId);
+          supabase
+            .from("user_data")
+            .upsert(row)
+            .then(({ error }) => {
+              if (error) {
+                console.error("[setUserData] Supabase save error:", error);
+              }
+            });
         }
 
         return newData;

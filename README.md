@@ -62,7 +62,7 @@ GRE 시험 대비 단어 암기 PWA 플래시카드 앱입니다. Manhattan Prep
 
 ### Backend & Auth
 
-- **Firebase** - 사용자 인증 및 데이터 저장
+- **Supabase** - 사용자 인증 및 PostgreSQL 데이터베이스
 - **Vercel Serverless Functions** - TTS API 프록시
 - **Google Cloud TTS** - 영어 발음 합성
 
@@ -106,14 +106,9 @@ npm run dev
 `.env` 파일을 생성하고 다음 변수를 설정하세요:
 
 ```bash
-# Firebase
-VITE_FIREBASE_API_KEY=
-VITE_FIREBASE_AUTH_DOMAIN=
-VITE_FIREBASE_PROJECT_ID=
-VITE_FIREBASE_STORAGE_BUCKET=
-VITE_FIREBASE_MESSAGING_SENDER_ID=
-VITE_FIREBASE_APP_ID=
-VITE_FIREBASE_MEASUREMENT_ID=
+# Supabase
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+VITE_SUPABASE_ANON_KEY=your_anon_key_here
 
 # Google Cloud TTS (Vercel 환경변수로 설정)
 GOOGLE_TTS_API_KEY=
@@ -158,7 +153,7 @@ npm run fix
     ├── contexts/    # React Context (Auth, Quiz)
     ├── data/        # 단어 데이터 (1,560개)
     ├── hooks/       # 커스텀 훅
-    ├── lib/         # Firebase 설정, 날짜 유틸리티
+    ├── lib/         # Supabase 설정, 날짜 유틸리티
     ├── pages/       # 페이지 컴포넌트
     └── types.ts     # TypeScript 타입 정의
 ```

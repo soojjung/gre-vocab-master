@@ -33,7 +33,7 @@ function ProtectedRoutes() {
   // 로그인 후: AuthenticatedApp 지연 로드 (Firestore 포함)
   return (
     <Suspense fallback={<PageLoader />}>
-      <AuthenticatedApp userId={user.uid} />
+      <AuthenticatedApp userId={user.id} />
     </Suspense>
   );
 }

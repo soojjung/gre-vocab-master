@@ -1,42 +1,21 @@
 import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 
-// Firebase Auth 에러를 한국어로 변환
+// Supabase Auth 에러를 한국어로 변환
 function getAuthErrorMessage(error: unknown): string {
-  const message = error instanceof Error ? error.message : "";
+  const code = (error as { code?: string })?.code ?? "";
 
-  if (message.includes("invalid-credential")) {
-    return "이메일 또는 비밀번호가 올바르지 않습니다";
-  }
-  if (message.includes("user-not-found")) {
-    return "존재하지 않는 계정입니다";
-  }
-  if (message.includes("wrong-password")) {
-    return "비밀번호가 틀렸습니다";
-  }
-  if (message.includes("email-already-in-use")) {
-    return "이미 사용 중인 이메일입니다";
-  }
-  if (message.includes("weak-password")) {
-    return "비밀번호는 6자 이상이어야 합니다";
-  }
-  if (message.includes("invalid-email")) {
-    return "유효하지 않은 이메일입니다";
-  }
-  if (message.includes("too-many-requests")) {
-    return "너무 많은 시도가 있었습니다. 잠시 후 다시 시도해주세요";
-  }
-  if (message.includes("network-request-failed")) {
-    return "네트워크 연결을 확인해주세요";
-  }
-  if (message.includes("popup-closed-by-user")) {
-    return "로그인이 취소되었습니다";
-  }
-  if (message.includes("cancelled-popup-request")) {
-    return "로그인이 취소되었습니다";
-  }
+  const errorMessages: Record<string, string> = {
+    invalid_credentials: "이메일 또는 비밀번호가 올바르지 않습니다",
+    user_not_found: "존재하지 않는 계정입니다",
+    email_exists: "이미 사용 중인 이메일입니다",
+    user_already_exists: "이미 사용 중인 이메일입니다",
+    weak_password: "비밀번호는 6자 이상이어야 합니다",
+    invalid_email: "유효하지 않은 이메일입니다",
+    over_request_rate_limit: "너무 많은 시도가 있었습니다. 잠시 후 다시 시도해주세요",
+  };
 
-  return "로그인에 실패했습니다. 다시 시도해주세요";
+  return errorMessages[code] ?? "로그인에 실패했습니다. 다시 시도해주세요";
 }
 
 export function Login() {
