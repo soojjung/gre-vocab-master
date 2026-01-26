@@ -2,6 +2,9 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import { Capacitor } from "@capacitor/core";
+import { App } from "@capacitor/app";
+import { Browser } from "@capacitor/browser";
 
 interface AuthContextType {
   user: User | null;
@@ -54,21 +57,84 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    // 네이티브 앱: Deep Link 수신 처리
+    let appUrlListener: { remove: () => void } | null = null;
+
+    if (Capacitor.isNativePlatform()) {
+      App.addListener("appUrlOpen", async ({ url }) => {
+        // grevocab://auth/callback#access_token=...&refresh_token=...
+        if (url.includes("auth/callback")) {
+          // URL에서 토큰 추출
+          const hashPart = url.split("#")[1];
+          if (hashPart) {
+            const params = new URLSearchParams(hashPart);
+            const accessToken = params.get("access_token");
+            const refreshToken = params.get("refresh_token");
+
+            if (accessToken && refreshToken) {
+              await supabase.auth.setSession({
+                access_token: accessToken,
+                refresh_token: refreshToken,
+              });
+            }
+          }
+          // 브라우저 닫기
+          await Browser.close();
+        }
+      }).then((listener) => {
+        appUrlListener = listener;
+      });
+    }
+
+    return () => {
+      subscription.unsubscribe();
+      appUrlListener?.remove();
+    };
   }, []);
 
   const signInWithGoogle = async () => {
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: window.location.origin,
-      },
-    });
+    const isNative = Capacitor.isNativePlatform();
+    const redirectTo = isNative ? "grevocab://auth/callback" : window.location.origin;
 
-    if (error) {
+    setLoading(true);
+
+    try {
+      if (isNative) {
+        // 네이티브 앱: OAuth URL 생성 후 외부 브라우저로 열기
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo,
+            skipBrowserRedirect: true,
+          },
+        });
+
+        if (error) {
+          console.error("[Auth] OAuth error:", error);
+          throw error;
+        }
+
+        if (data?.url) {
+          try {
+            await Browser.open({ url: data.url, presentationStyle: "fullscreen" });
+          } catch {
+            window.open(data.url, "_blank");
+          }
+        }
+      } else {
+        // 웹: 기존 방식
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo,
+          },
+        });
+
+        if (error) throw error;
+      }
+    } catch (error) {
       setLoading(false);
-      console.error("Google 로그인 오류:", error);
+      console.error("[Auth] Google 로그인 오류:", error);
       throw error;
     }
   };
@@ -103,6 +169,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.error("로그아웃 오류:", error);
       throw error;
     }
+    // 로그아웃 후 홈으로 이동 (다음 로그인 시 홈에서 시작)
+    window.location.href = "/";
   };
 
   const value = {

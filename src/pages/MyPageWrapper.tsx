@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight, BookOpen, BookMarked, LogOut, Volume2, VolumeX, Mail, FileText, Heart } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useUserData } from "@/hooks/useUserData";
+import { useUserDataContext } from "@/contexts/UserDataContext";
 import { getTodayString } from "@/lib/date";
 import { BackHeader } from "@/components/BackHeader";
 import { Button } from "@/components/common";
@@ -10,7 +10,7 @@ import { Button } from "@/components/common";
 export function MyPageWrapper() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { userData, loading, updateSettings } = useUserData(user?.id);
+  const { userData, loading, updateSettings } = useUserDataContext();
 
   const [isEditingDday, setIsEditingDday] = useState(false);
   const [isEditingGoal, setIsEditingGoal] = useState(false);
@@ -71,7 +71,7 @@ export function MyPageWrapper() {
     return (
       <div className="min-h-screen bg-gray-50 relative">
         <BackHeader title="마이페이지" onBack={() => navigate("/")} />
-        <div className="px-5 pt-[calc(5rem+env(safe-area-inset-top))] pb-12 space-y-5">
+        <div className="px-5 pt-[calc(4rem+env(safe-area-inset-top,0px))] pb-8 space-y-5">
           <div className="bg-white rounded-2xl p-5">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 bg-gray-200 rounded-full animate-pulse" />
@@ -92,7 +92,7 @@ export function MyPageWrapper() {
     <div className="min-h-screen bg-gray-50 relative">
       <BackHeader title="마이페이지" onBack={() => navigate("/")} />
 
-      <div className="px-5 pt-[calc(5rem+env(safe-area-inset-top))] pb-12 space-y-5">
+      <div className="px-5 pt-[calc(4rem+env(safe-area-inset-top,0px))] pb-8 space-y-5">
         {/* 프로필 */}
         <div className="bg-white rounded-2xl p-5">
           <div className="flex items-center gap-4">

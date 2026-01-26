@@ -29,9 +29,9 @@ export function QuizResultPage() {
   const message = getMessage();
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white pb-8">
       {/* 결과 요약 */}
-      <div className="bg-black text-white px-5 py-12 text-center">
+      <div className="bg-black text-white px-5 py-12 text-center pt-[calc(4rem+env(safe-area-inset-top,0px))]">
         <div className="text-6xl mb-4">{message.emoji}</div>
         <div className="text-2xl font-bold mb-2">{message.text}</div>
         <div className="text-gray-500">{quizType === "fill-blank" ? "빈칸 채우기" : "객관식"} 퀴즈</div>

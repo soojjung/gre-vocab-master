@@ -8,7 +8,7 @@ interface BackHeaderProps {
 
 export function BackHeader({ title, onBack, rightElement }: BackHeaderProps) {
   return (
-    <div className="bg-white px-5 py-4 flex items-center justify-between border-b border-gray-100 absolute top-0 left-0 right-0 z-10 pt-[calc(1rem+env(safe-area-inset-top))]">
+    <div className="bg-white px-5 pb-3 flex items-center justify-between border-b border-gray-100 fixed top-0 left-0 right-0 z-10 pt-[max(0.75rem,calc(env(safe-area-inset-top)+0.25rem))]">
       <div className="flex items-center gap-4">
         <button onClick={onBack} className="p-2 -ml-2 text-gray-600">
           <ChevronLeft size={24} />

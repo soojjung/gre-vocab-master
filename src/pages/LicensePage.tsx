@@ -49,7 +49,7 @@ export function LicensePage() {
     <div className="min-h-screen bg-gray-50 relative">
       <BackHeader title="라이선스 및 출처" onBack={() => navigate("/mypage")} />
 
-      <div className="px-5 py-6 pt-[calc(5rem+env(safe-area-inset-top))] space-y-5">
+      <div className="px-5 py-6 pt-[calc(4rem+env(safe-area-inset-top,0px))] pb-8 space-y-5">
         <div className="space-y-4">
           <h2 className="text-lg font-bold text-gray-900">단어 데이터 출처</h2>
           <p className="text-sm text-gray-500">이 앱의 GRE 단어 데이터는 아래 자료를 참고하여 구성되었습니다.</p>

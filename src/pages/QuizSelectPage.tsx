@@ -2,8 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { PenLine, ListChecks, Play } from "lucide-react";
 import { words } from "@/data/words";
-import { useAuth } from "@/contexts/AuthContext";
-import { useUserData } from "@/hooks/useUserData";
+import { useUserDataContext } from "@/contexts/UserDataContext";
 import { useQuiz } from "@/contexts/QuizContext";
 import { BackHeader } from "@/components/BackHeader";
 import { Button } from "@/components/common";
@@ -14,8 +13,7 @@ const QUIZ_COUNT = 20;
 
 export function QuizSelectPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { userData } = useUserData(user?.id);
+  const { userData } = useUserDataContext();
   const { setQuizType, setQuizCount } = useQuiz();
 
   const [selectedType, setSelectedType] = useState<QuizType>("fill-blank");
@@ -39,7 +37,7 @@ export function QuizSelectPage() {
     <div className="min-h-screen bg-white relative">
       <BackHeader title="퀴즈 모드" onBack={() => navigate("/")} />
 
-      <div className="px-5 py-6 pt-[calc(5rem+env(safe-area-inset-top))]">
+      <div className="px-5 py-6 pt-[calc(4rem+env(safe-area-inset-top,0px))] pb-8">
         {/* 학습한 단어 수 안내 */}
         <div className="bg-gray-50 rounded-2xl p-5 mb-6">
           <div className="text-sm text-gray-600 mb-1">학습한 단어</div>

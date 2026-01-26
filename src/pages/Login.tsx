@@ -57,7 +57,7 @@ export function Login() {
   };
 
   return (
-    <main className="min-h-dvh bg-white px-5 py-12 flex flex-col">
+    <main className="min-h-dvh bg-white px-5 flex flex-col pb-12 pt-[calc(2rem+env(safe-area-inset-top,0px))]">
       {/* 헤더 */}
       <header className="text-center mb-12">
         <div className="w-16 h-16 bg-black rounded-2xl flex items-center justify-center mx-auto mb-4">

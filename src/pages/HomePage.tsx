@@ -2,14 +2,12 @@ import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { User, BadgeQuestionMark, BookOpen, BookMarked, Flame, BarChart3 } from "lucide-react";
 import { words } from "@/data/words";
-import { useAuth } from "@/contexts/AuthContext";
-import { useUserData } from "@/hooks/useUserData";
+import { useUserDataContext } from "@/contexts/UserDataContext";
 import { Button } from "@/components/common";
 
 export function HomePage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { userData, loading, getDday, getReviewCount, getOverallProgress } = useUserData(user?.id);
+  const { userData, loading, getDday, getReviewCount, getOverallProgress } = useUserDataContext();
 
   const overallProgress = useMemo(() => getOverallProgress(words.length), [getOverallProgress]);
   const dday = getDday();
@@ -18,7 +16,7 @@ export function HomePage() {
   // 로딩 중일 때 스켈레톤 표시
   if (loading) {
     return (
-      <div className="min-h-screen bg-white px-5 py-8">
+      <div className="min-h-screen bg-white px-5 pb-8 pt-[calc(2rem+env(safe-area-inset-top,0px))]">
         <header className="mb-8">
           <div className="h-8 w-40 bg-gray-200 rounded animate-pulse" />
           <div className="h-5 w-56 bg-gray-100 rounded animate-pulse mt-2" />
@@ -33,15 +31,11 @@ export function HomePage() {
   return (
     <div className="relative">
       {/* 마이페이지 버튼 */}
-      <button
-        onClick={() => navigate("/mypage")}
-        className="absolute top-4 right-4 w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-200"
-        aria-label="마이페이지"
-      >
+      <button onClick={() => navigate("/mypage")} className="absolute right-4 top-[calc(1rem+env(safe-area-inset-top,0px))] w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-200" aria-label="마이페이지">
         <User size={20} />
       </button>
 
-      <main className="min-h-screen bg-white px-5 py-8 pb-24">
+      <main className="min-h-screen bg-white px-5 pb-24 pt-[calc(1rem+env(safe-area-inset-top,0px))]">
         {/* 헤더 */}
         <header className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">단어의 신 GRE</h1>

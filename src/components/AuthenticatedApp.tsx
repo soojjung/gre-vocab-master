@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import { useUserData } from "@/hooks/useUserData";
+import { UserDataProvider, useUserDataContext } from "@/contexts/UserDataContext";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { Onboarding } from "@/pages/Onboarding";
 import { HomePage } from "@/pages/HomePage";
@@ -28,8 +28,8 @@ interface AuthenticatedAppProps {
   userId: string;
 }
 
-export function AuthenticatedApp({ userId }: AuthenticatedAppProps) {
-  const { userData, loading: dataLoading, completeOnboarding } = useUserData(userId);
+function AuthenticatedAppContent() {
+  const { userData, loading: dataLoading, completeOnboarding } = useUserDataContext();
 
   // 데이터 로딩 중
   if (dataLoading) {
@@ -66,5 +66,13 @@ export function AuthenticatedApp({ userId }: AuthenticatedAppProps) {
         </Routes>
       </Suspense>
     </>
+  );
+}
+
+export function AuthenticatedApp({ userId }: AuthenticatedAppProps) {
+  return (
+    <UserDataProvider userId={userId}>
+      <AuthenticatedAppContent />
+    </UserDataProvider>
   );
 }

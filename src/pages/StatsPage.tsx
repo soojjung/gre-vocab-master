@@ -2,14 +2,12 @@ import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { TrendingUp, Flame, Target, BookOpen, CheckCircle, Clock } from "lucide-react";
 import { words } from "@/data/words";
-import { useAuth } from "@/contexts/AuthContext";
-import { useUserData } from "@/hooks/useUserData";
+import { useUserDataContext } from "@/contexts/UserDataContext";
 import { BackHeader } from "@/components/BackHeader";
 
 export function StatsPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { userData, loading, getDday, getOverallProgress } = useUserData(user?.id);
+  const { userData, loading, getDday, getOverallProgress } = useUserDataContext();
 
   const stats = useMemo(() => {
     const progressEntries = Object.entries(userData.progress);
@@ -62,7 +60,7 @@ export function StatsPage() {
     return (
       <div className="min-h-screen bg-gray-50 relative">
         <BackHeader title="학습 통계" onBack={() => navigate("/")} />
-        <div className="px-5 py-6 pt-[calc(5rem+env(safe-area-inset-top))] space-y-5">
+        <div className="px-5 py-6 pt-[calc(4rem+env(safe-area-inset-top,0px))] pb-8 space-y-5">
           <div className="bg-gray-300 rounded-2xl h-36 animate-pulse" />
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-white rounded-2xl h-24 animate-pulse" />
@@ -78,7 +76,7 @@ export function StatsPage() {
     <div className="min-h-screen bg-gray-50 relative">
       <BackHeader title="학습 통계" onBack={() => navigate("/")} />
 
-      <div className="px-5 py-6 pt-[calc(5rem+env(safe-area-inset-top))] space-y-5">
+      <div className="px-5 py-6 pt-[calc(4rem+env(safe-area-inset-top,0px))] pb-8 space-y-5">
         {/* 요약 카드 */}
         <div className="bg-black text-white rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">

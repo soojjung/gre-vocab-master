@@ -1,8 +1,7 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { words } from "@/data/words";
-import { useAuth } from "@/contexts/AuthContext";
-import { useUserData } from "@/hooks/useUserData";
+import { useUserDataContext } from "@/contexts/UserDataContext";
 import { getTodayString } from "@/lib/date";
 import { speakWord } from "@/lib/tts";
 import { createShuffledIndices } from "@/lib/shuffle";
@@ -11,8 +10,7 @@ import { FlashCard, StudyComplete, StudyHeader, AnswerButtons } from "@/componen
 
 export function StudyPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { userData, loading, recordAnswer, updateSettings, getOrCreateTodaySession, updateSessionProgress } = useUserData(user?.id);
+  const { userData, loading, recordAnswer, updateSettings, getOrCreateTodaySession, updateSessionProgress } = useUserDataContext();
 
   // 오늘 날짜 기반 셔플 순서 (같은 날에는 항상 동일)
   const todayShuffledIndices = useMemo(() => {
@@ -139,7 +137,7 @@ export function StudyPage() {
   // 로딩
   if (loading) {
     return (
-      <div className="min-h-dvh bg-white px-5 py-8 flex flex-col">
+      <div className="min-h-dvh bg-white px-5 pb-8 flex flex-col pt-[max(2rem,env(safe-area-inset-top))]">
         <div className="flex items-center justify-between mb-6">
           <div className="w-10 h-10 bg-gray-100 rounded animate-pulse" />
           <div className="w-16 h-5 bg-gray-100 rounded animate-pulse" />
@@ -163,7 +161,7 @@ export function StudyPage() {
     const reviewWord = reviewWords[reviewIndex];
 
     return (
-      <div className="min-h-dvh bg-white px-5 py-8 flex flex-col">
+      <div className="min-h-dvh bg-white px-5 pb-8 flex flex-col pt-[max(2rem,env(safe-area-inset-top))]">
         <StudyHeader current={reviewIndex + 1} total={reviewWords.length} onBack={() => setReviewMode(false)} />
         <FlashCard word={reviewWord} isFlipped={isFlipped} onFlip={() => setIsFlipped(true)} />
         {isFlipped && (
@@ -178,7 +176,7 @@ export function StudyPage() {
   // 단어 없음
   if (!currentWord) {
     return (
-      <div className="min-h-dvh bg-white px-5 py-8 flex flex-col items-center justify-center">
+      <div className="min-h-dvh bg-white px-5 pb-8 flex flex-col items-center justify-center pt-[max(2rem,env(safe-area-inset-top))]">
         <p className="text-gray-500">학습할 단어가 없습니다.</p>
         <button onClick={() => navigate("/")} className="mt-4 text-black underline">
           돌아가기
@@ -189,7 +187,7 @@ export function StudyPage() {
 
   // 기본 학습 화면
   return (
-    <div className="min-h-dvh bg-white px-5 py-8 flex flex-col">
+    <div className="min-h-dvh bg-white px-5 pb-8 flex flex-col pt-[max(2rem,env(safe-area-inset-top))]">
       <StudyHeader current={currentIndex + 1} total={studyWords.length} onBack={() => navigate(-1)} />
       <FlashCard word={currentWord} isFlipped={isFlipped} onFlip={handleFlip} />
 

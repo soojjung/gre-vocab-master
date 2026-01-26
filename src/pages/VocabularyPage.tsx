@@ -3,16 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { Search, Star, Bookmark, BookmarkCheck } from "lucide-react";
 import type { Word } from "@/types";
 import { words } from "@/data/words";
-import { useAuth } from "@/contexts/AuthContext";
-import { useUserData } from "@/hooks/useUserData";
+import { useUserDataContext } from "@/contexts/UserDataContext";
 import { BackHeader } from "@/components/BackHeader";
 
 type FilterType = "all" | "learning" | "mastered" | "bookmarked";
 
 export function VocabularyPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { userData, toggleBookmark } = useUserData(user?.id);
+  const { userData, toggleBookmark } = useUserDataContext();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");
@@ -50,10 +48,10 @@ export function VocabularyPage() {
     const wordStatus = getWordStatus(selectedWord.id);
 
     return (
-      <div className="min-h-screen bg-white relative">
+      <div className="min-h-screen bg-white relative pb-8">
         <BackHeader title={selectedWord.word} onBack={() => setSelectedWord(null)} />
 
-        <div className="px-5 py-8 pt-[calc(5rem+env(safe-area-inset-top))] text-center">
+        <div className="px-5 py-8 pt-[calc(4rem+env(safe-area-inset-top,0px))] text-center">
           <div className="text-4xl font-bold text-gray-900 mb-4">{selectedWord.word}</div>
           <div className="text-xl text-gray-600 mb-8">{selectedWord.meaning}</div>
 
@@ -82,10 +80,10 @@ export function VocabularyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white pb-24 relative">
+    <div className="min-h-screen bg-white pb-8 relative">
       <BackHeader title="단어장" onBack={() => navigate(-1)} />
 
-      <div className="px-5 pt-[calc(5rem+env(safe-area-inset-top))]">
+      <div className="px-5 pt-[calc(4rem+env(safe-area-inset-top,0px))]">
         {/* 검색 */}
         <div className="relative mb-4">
           <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="단어 또는 뜻 검색" className="w-full bg-gray-100 rounded-xl px-4 py-3 pl-10 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black" />

@@ -4,8 +4,7 @@ import { toast } from "sonner";
 import { X } from "lucide-react";
 import { words } from "@/data/words";
 import type { Word } from "@/types";
-import { useAuth } from "@/contexts/AuthContext";
-import { useUserData } from "@/hooks/useUserData";
+import { useUserDataContext } from "@/contexts/UserDataContext";
 import { useQuiz } from "@/contexts/QuizContext";
 
 interface QuizQuestion {
@@ -39,8 +38,7 @@ function generateQuestions(availableWords: Word[], count: number): QuizQuestion[
 
 export function QuizPlayPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { userData, loading } = useUserData(user?.id);
+  const { userData, loading } = useUserDataContext();
   const { quizType, quizCount, setQuizResults } = useQuiz();
 
   const quizWords = useMemo(() => {
@@ -119,7 +117,7 @@ export function QuizPlayPage() {
   // 로딩 중이면 로딩 화면 표시
   if (loading) {
     return (
-      <div className="min-h-dvh bg-white flex items-center justify-center">
+      <div className="min-h-dvh bg-white flex items-center justify-center pt-[env(safe-area-inset-top)]">
         <div className="w-8 h-8 border-4 border-gray-200 border-t-black rounded-full animate-spin" />
       </div>
     );
@@ -148,7 +146,7 @@ export function QuizPlayPage() {
   return (
     <div className="min-h-dvh bg-white flex flex-col">
       {/* 상단 헤더 */}
-      <header className="px-5 py-4 border-b border-gray-100">
+      <header className="px-5 py-4 border-b border-gray-100 pt-[max(2rem,env(safe-area-inset-top))]">
         <div className="flex items-center justify-between mb-3">
           <button onClick={() => navigate("/quiz")} className="text-gray-600 hover:text-gray-900">
             <X size={24} />

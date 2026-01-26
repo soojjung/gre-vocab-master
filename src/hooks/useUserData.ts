@@ -53,6 +53,7 @@ export function useUserData(userId?: string | null) {
   const [prevUserId, setPrevUserId] = useState(userId);
   const [loading, setLoading] = useState(!!userId);
   const dataLoaded = useRef(false);
+  const isSaving = useRef(false);
 
   // userId 변경 감지
   if (userId !== prevUserId) {
@@ -72,6 +73,11 @@ export function useUserData(userId?: string | null) {
     }
 
     const loadData = async () => {
+      // 저장 중이면 로드하지 않음 (race condition 방지)
+      if (isSaving.current) {
+        return;
+      }
+
       try {
         const { data: row, error } = await supabase
           .from("user_data")
@@ -86,10 +92,16 @@ export function useUserData(userId?: string | null) {
           const defaultData = getDefaultUserData();
           const newRow = userDataToRow(defaultData, userId);
 
-          await supabase.from("user_data").insert(newRow);
+          const { error: insertError } = await supabase
+            .from("user_data")
+            .upsert(newRow, { onConflict: "user_id" });
+
+          if (insertError) {
+            console.error("[useUserData] Error creating user data:", insertError);
+          }
           setUserDataState(defaultData);
         } else {
-          let data = rowToUserData(row);
+          const data = rowToUserData(row);
 
           // 날짜가 바뀌면 todayLearned 초기화
           if (data.lastStudyDate !== getTodayString()) {
@@ -122,11 +134,13 @@ export function useUserData(userId?: string | null) {
 
         // Supabase에 저장
         if (userId) {
+          isSaving.current = true;
           const row = userDataToRow(newData, userId);
           supabase
             .from("user_data")
-            .upsert(row)
+            .upsert(row, { onConflict: "user_id" })
             .then(({ error }) => {
+              isSaving.current = false;
               if (error) {
                 console.error("[setUserData] Supabase save error:", error);
               }
@@ -247,15 +261,34 @@ export function useUserData(userId?: string | null) {
 
   // 온보딩 완료
   const completeOnboarding = useCallback(
-    (targetDate: string, dailyGoal: number) => {
-      setUserData((prev) => ({
-        ...prev,
+    async (targetDate: string, dailyGoal: number) => {
+      const newData: UserData = {
+        ...userData,
         targetDate,
         dailyGoal,
         onboardingComplete: true,
-      }));
+      };
+
+      // 로컬 상태 먼저 업데이트
+      setUserDataState(newData);
+
+      // Supabase에 직접 저장 (await로 완료 확인)
+      if (userId) {
+        isSaving.current = true;
+        const row = userDataToRow(newData, userId);
+
+        const { error } = await supabase
+          .from("user_data")
+          .upsert(row, { onConflict: "user_id" });
+
+        isSaving.current = false;
+
+        if (error) {
+          console.error("[completeOnboarding] Save error:", error);
+        }
+      }
     },
-    [setUserData]
+    [userData, userId]
   );
 
   // 데이터 초기화
