@@ -1,8 +1,23 @@
 import path from "path";
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
+
+// CSS 비동기 로딩 플러그인 (FCP 개선)
+function asyncCssPlugin(): Plugin {
+  return {
+    name: "async-css",
+    enforce: "post",
+    transformIndexHtml(html) {
+      // <link rel="stylesheet" ...> 를 비동기 로딩으로 변경
+      return html.replace(
+        /<link rel="stylesheet"([^>]*) href="([^"]+)"([^>]*)>/g,
+        '<link rel="stylesheet"$1 href="$2"$3 media="print" onload="this.media=\'all\'">'
+      );
+    },
+  };
+}
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -28,6 +43,7 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    asyncCssPlugin(),
     VitePWA({
       registerType: "autoUpdate",
       injectRegister: false, // 수동 등록 (페이지 로드 후 등록으로 FCP 개선)

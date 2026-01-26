@@ -8,7 +8,8 @@
 
 | 최적화                     | 효과                        | 영향 지표        |
 | -------------------------- | --------------------------- | ---------------- |
-| HTML 사전 렌더링           | LCP 즉시 표시               | LCP, FCP         |
+| HTML 사전 렌더링           | FCP 즉시 표시               | FCP              |
+| CSS 비동기 로딩            | 렌더 블로킹 제거            | FCP, LCP         |
 | Auth 로딩 최적화           | 첫 방문자 즉시 Login 표시   | FCP              |
 | 코드 스플리팅              | 페이지별 청크 분리          | TBT              |
 | Vendor 청크 분리           | 라이브러리 캐시 최적화      | Speed Index      |
@@ -46,7 +47,33 @@ React hydration 시 자동 교체됨.
 
 ---
 
-### 2. Auth 로딩 최적화 - FCP 즉시 발생
+### 2. CSS 비동기 로딩 - 렌더 블로킹 제거
+
+**문제:** Vite가 빌드한 CSS 파일이 `<link rel="stylesheet">`로 head에 주입되어 렌더링을 차단. 사전 렌더링된 HTML이 있어도 CSS 로드 완료까지 FCP 지연.
+
+**해결:** Vite 플러그인으로 CSS를 비동기 로딩:
+
+```typescript
+// vite.config.ts
+function asyncCssPlugin(): Plugin {
+  return {
+    name: "async-css",
+    enforce: "post",
+    transformIndexHtml(html) {
+      return html.replace(
+        /<link rel="stylesheet"([^>]*) href="([^"]+)"([^>]*)>/g,
+        '<link rel="stylesheet"$1 href="$2"$3 media="print" onload="this.media=\'all\'">'
+      );
+    },
+  };
+}
+```
+
+**결과:** CSS가 렌더링을 차단하지 않아 사전 렌더링된 HTML이 즉시 FCP로 측정됨.
+
+---
+
+### 3. Auth 로딩 최적화 - FCP 즉시 발생
 
 **문제:** Auth 응답을 기다리는 동안 스피너를 표시하면 느린 네트워크에서 FCP 지연.
 
