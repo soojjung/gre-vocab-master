@@ -22,23 +22,38 @@
 
 ### 1. HTML 사전 렌더링 - LCP 즉시 표시
 
-**문제:** React 앱은 JS가 로드되고 실행된 후에야 화면에 콘텐츠가 표시됨. 느린 네트워크에서 사용자는 빈 화면을 오래 보게 됨.
+**문제:** React 앱은 JS가 로드되고 실행된 후에야 화면에 콘텐츠가 표시됨. CSS도 JS에 번들되어 있어 JS 로드 후에야 스타일이 적용됨. 느린 네트워크에서 LCP가 10초 이상 지연될 수 있음.
 
-**해결:** LCP(Largest Contentful Paint) 요소인 로고와 제목을 HTML에 직접 작성. JS 로드 전에 브라우저가 즉시 렌더링함:
+**해결:** 로그인 페이지 전체 레이아웃을 HTML에 인라인 스타일로 직접 작성. JS/CSS 로드 전에도 완전한 UI가 표시되어 LCP가 즉시 발생:
 
 ```html
 <!-- index.html -->
 <div id="root">
-  <!-- JS 로드 전 즉시 표시 -->
-  <main style="min-height:100vh;background:#fff;padding:48px 20px;...">
-    <div style="width:64px;height:64px;background:#000;...">
-      <span style="color:#fff;font-size:24px;font-weight:700">G</span>
-    </div>
-    <h1 style="font-size:24px;font-weight:700;...">단어의 신 GRE</h1>
-    <p style="color:#6b7280;...">1500 단어 정복의 시작</p>
+  <!-- JS/CSS 로드 전 즉시 표시되는 전체 로그인 페이지 -->
+  <main style="min-height:100dvh;background:#fff;padding:48px 20px;...">
+    <!-- 헤더 -->
+    <header style="text-align:center;margin-bottom:48px">
+      <div style="width:64px;height:64px;background:#000;border-radius:16px;...">
+        <span style="color:#fff;font-size:24px;font-weight:700">G</span>
+      </div>
+      <h1>단어의 신 GRE</h1>
+      <p>1500 단어 정복의 시작</p>
+    </header>
+    <!-- Google 로그인 버튼 -->
+    <button style="...">Google로 계속하기</button>
+    <!-- 구분선 -->
+    <div>또는</div>
+    <!-- 이메일 입력 폼 -->
+    <input placeholder="이메일" disabled style="..." />
+    <input placeholder="비밀번호" disabled style="..." />
+    <button style="...">로그인</button>
+    <!-- 회원가입 링크 -->
+    <span>계정이 없으신가요? 회원가입</span>
   </main>
 </div>
 ```
+
+**핵심:** 사전 렌더링된 UI가 LCP 요소가 되어야 함. 단순히 로고만 표시하면 React가 렌더링한 더 큰 요소(로그인 폼)가 LCP로 측정됨.
 
 React hydration 시 자동 교체됨.
 
