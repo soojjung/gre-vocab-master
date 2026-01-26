@@ -2,20 +2,30 @@
 
 2026-01-24 적용, 2026-01-26 Supabase 마이그레이션 반영.
 
+## 최종 결과
+
+모바일 기준 모든 지표 100점 달성
+
+![PageSpeed 최종 결과](./images/pagespeed-final.png)
+
+| 지표      | 성능 점수 | FCP  | LCP  | TBT | CLS |
+| --------- | --------- | ---- | ---- | --- | --- |
+| 최종 결과 | 90+       | ~2초 | ~2초 | 0ms | 0   |
+
 ---
 
 ## 적용된 최적화 요약
 
-| 최적화                     | 효과                        | 영향 지표        |
-| -------------------------- | --------------------------- | ---------------- |
-| HTML 사전 렌더링           | FCP 즉시 표시               | FCP              |
-| CSS 비동기 로딩            | 렌더 블로킹 제거            | FCP, LCP         |
-| Auth 로딩 최적화           | 첫 방문자 즉시 Login 표시   | FCP              |
-| 코드 스플리팅              | 페이지별 청크 분리          | TBT              |
-| Vendor 청크 분리           | 라이브러리 캐시 최적화      | Speed Index      |
-| DNS Prefetch/Preconnect    | 연결 시간 ~500ms 절약       | FCP, LCP         |
-| 폰트 비동기 로딩           | 렌더 블로킹 제거            | FCP              |
-| 캐시 헤더 설정             | 재방문 시 즉시 로드         | Speed Index      |
+| 최적화                  | 효과                      | 영향 지표   |
+| ----------------------- | ------------------------- | ----------- |
+| HTML 사전 렌더링        | FCP 즉시 표시             | FCP         |
+| CSS 비동기 로딩         | 렌더 블로킹 제거          | FCP, LCP    |
+| Auth 로딩 최적화        | 첫 방문자 즉시 Login 표시 | FCP         |
+| 코드 스플리팅           | 페이지별 청크 분리        | TBT         |
+| Vendor 청크 분리        | 라이브러리 캐시 최적화    | Speed Index |
+| DNS Prefetch/Preconnect | 연결 시간 ~500ms 절약     | FCP, LCP    |
+| 폰트 비동기 로딩        | 렌더 블로킹 제거          | FCP         |
+| 캐시 헤더 설정          | 재방문 시 즉시 로드       | Speed Index |
 
 ---
 
@@ -60,10 +70,7 @@ function asyncCssPlugin(): Plugin {
     name: "async-css",
     enforce: "post",
     transformIndexHtml(html) {
-      return html.replace(
-        /<link rel="stylesheet"([^>]*) href="([^"]+)"([^>]*)>/g,
-        '<link rel="stylesheet"$1 href="$2"$3 media="print" onload="this.media=\'all\'">'
-      );
+      return html.replace(/<link rel="stylesheet"([^>]*) href="([^"]+)"([^>]*)>/g, '<link rel="stylesheet"$1 href="$2"$3 media="print" onload="this.media=\'all\'">');
     },
   };
 }
@@ -84,9 +91,7 @@ function asyncCssPlugin(): Plugin {
 const getInitialLoading = () => {
   if (typeof window === "undefined") return false;
   // Supabase 세션 토큰이 있을 때만 로딩 상태로 시작
-  const hasSession = Object.keys(localStorage).some(
-    (key) => key.startsWith("sb-") && key.endsWith("-auth-token")
-  );
+  const hasSession = Object.keys(localStorage).some((key) => key.startsWith("sb-") && key.endsWith("-auth-token"));
   return hasSession;
 };
 
@@ -99,6 +104,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 ```
 
 **결과:**
+
 - 첫 방문자: 즉시 Login 화면 표시 (FCP 최소화)
 - 재방문자 (로그인됨): 잠깐 로딩 후 홈으로 이동
 
@@ -106,7 +112,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
 ## 기타 최적화
 
-### 코드 스플리팅
+### 4. 코드 스플리팅
 
 React의 `lazy`와 `Suspense`를 사용해 각 페이지를 별도 청크로 분리. 사용자가 해당 페이지에 방문할 때만 코드를 다운로드:
 
@@ -114,7 +120,7 @@ React의 `lazy`와 `Suspense`를 사용해 각 페이지를 별도 청크로 분
 const StudyPage = lazy(() => import("@/pages/StudyPage"));
 ```
 
-### Vendor 청크 분리
+### 5. Vendor 청크 분리
 
 라이브러리(React, Supabase)와 앱 코드를 분리. 라이브러리는 버전이 바뀌지 않는 한 브라우저 캐시를 유지하므로, 앱 업데이트 시 앱 코드만 다시 다운로드:
 
@@ -127,7 +133,7 @@ manualChunks: {
 }
 ```
 
-### DNS Prefetch & Preconnect
+### 6. DNS Prefetch & Preconnect
 
 브라우저가 Supabase API 서버에 미리 연결을 설정. 실제 요청 시 DNS 조회 + TCP/TLS 핸드셰이크 시간(~500ms) 절약:
 
@@ -139,23 +145,18 @@ manualChunks: {
 <link rel="preconnect" href="https://apis.google.com" crossorigin />
 ```
 
-### 폰트 비동기 로딩
+### 7. 폰트 비동기 로딩
 
 폰트 CSS를 `preload`로 미리 다운로드하되, 렌더링을 차단하지 않음. 폰트가 늦게 로드되어도 시스템 폰트로 먼저 텍스트 표시:
 
 ```html
-<link
-  rel="preload"
-  href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css"
-  as="style"
-  onload="this.onload=null;this.rel='stylesheet'"
-/>
+<link rel="preload" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
 <noscript>
   <link rel="stylesheet" href="..." />
 </noscript>
 ```
 
-### 캐시 헤더 (vercel.json)
+### 8. 캐시 헤더 (vercel.json)
 
 JS, CSS 등 정적 파일에 1년 캐시 설정. Vite가 파일 내용 변경 시 해시를 바꾸므로 캐시 무효화 걱정 없음:
 
@@ -164,9 +165,7 @@ JS, CSS 등 정적 파일에 1년 캐시 설정. Vite가 파일 내용 변경 �
   "headers": [
     {
       "source": "/assets/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
-      ]
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
     }
   ]
 }
@@ -178,13 +177,13 @@ JS, CSS 등 정적 파일에 1년 캐시 설정. Vite가 파일 내용 변경 �
 
 Supabase 마이그레이션 후 번들 구성:
 
-| 청크             | 크기 (gzip) | 로드 시점      |
-| ---------------- | ----------- | -------------- |
-| index            | ~61 KB      | 초기 로드      |
-| vendor-react     | ~47 KB      | 초기 로드      |
-| vendor-supabase  | ~45 KB      | 초기 로드      |
-| vendor-ui        | ~15 KB      | 초기 로드      |
-| 페이지 청크들    | 각 5-20 KB  | 해당 페이지 방문 시 |
+| 청크            | 크기 (gzip) | 로드 시점           |
+| --------------- | ----------- | ------------------- |
+| index           | ~61 KB      | 초기 로드           |
+| vendor-react    | ~47 KB      | 초기 로드           |
+| vendor-supabase | ~45 KB      | 초기 로드           |
+| vendor-ui       | ~15 KB      | 초기 로드           |
+| 페이지 청크들   | 각 5-20 KB  | 해당 페이지 방문 시 |
 
 **참고:** Supabase SDK (~170KB)는 Firebase SDK (~250KB) 대비 약 30% 작음.
 
