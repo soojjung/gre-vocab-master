@@ -26,9 +26,18 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+// 이전에 로그인한 적 있는지 확인 (FCP 최적화)
+const getInitialLoading = () => {
+  if (typeof window === "undefined") return false;
+  // Supabase 세션 토큰이 있으면 로딩 상태로 시작
+  const hasSession = Object.keys(localStorage).some((key) => key.startsWith("sb-") && key.endsWith("-auth-token"));
+  return hasSession;
+};
+
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  // 세션이 있을 때만 로딩 표시 (첫 방문자는 즉시 Login 표시)
+  const [loading, setLoading] = useState(getInitialLoading);
 
   useEffect(() => {
     // 현재 세션 확인
