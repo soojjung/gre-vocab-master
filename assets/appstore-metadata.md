@@ -55,7 +55,7 @@ GRE 준비의 첫 걸음, 단어의 신과 함께 시작하세요.
 
 ## 키워드 (Keywords, 100자 이내)
 
-GRE,단어,영단어,보카,어휘,암기,플래시카드,간격반복,유학,미국 유학,대학원,미국 대학원,시험,학습,영어,Manhattan,vocabulary,단어장,복습,토플,SAT,vocab,공부
+GRE,단어,영단어,보카,어휘,암기,플래시카드,간격반복,유학,미국 유학,대학원,미국 대학원,시험,학습,영어,Manhattan,vocabulary,단어장,토플,SAT,vocab,공부
 
 ## 프로모션 텍스트 (Promotional Text, 170자 이내)
 
@@ -63,7 +63,7 @@ GRE 필수 단어 1,560개를 간격 반복 학습법으로 효율적으로 암�
 
 ## 지원 URL
 
-https://github.com/soojinjung/gre-vocab
+https://gre-vocab-master.vercel.app/
 
 ## 마케팅 URL (선택)
 
