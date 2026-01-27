@@ -8,7 +8,7 @@ export function AboutPage() {
     <div className="min-h-screen bg-gray-50 relative">
       <BackHeader title="개발자의 말" onBack={() => navigate("/mypage")} />
 
-      <div className="px-5 pt-[calc(4rem+env(safe-area-inset-top,0px))] pb-8">
+      <div className="px-5 pt-[calc(4.5rem+env(safe-area-inset-top,0px))] pb-8">
         <div className="bg-white rounded-2xl p-6 space-y-6">
           <div className="text-center">
             <div className="text-4xl mb-2">👋</div>

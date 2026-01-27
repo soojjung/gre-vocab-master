@@ -15,6 +15,7 @@ const QuizResultPage = lazy(() => import("@/pages/QuizResultPage").then((m) => (
 const StatsPage = lazy(() => import("@/pages/StatsPage").then((m) => ({ default: m.StatsPage })));
 const LicensePage = lazy(() => import("@/pages/LicensePage").then((m) => ({ default: m.LicensePage })));
 const AboutPage = lazy(() => import("@/pages/AboutPage").then((m) => ({ default: m.AboutPage })));
+const ContactPage = lazy(() => import("@/pages/ContactPage").then((m) => ({ default: m.ContactPage })));
 
 function PageLoader() {
   return (
@@ -58,6 +59,7 @@ function AuthenticatedAppContent() {
           <Route path="/mypage" element={<MyPageWrapper />} />
           <Route path="/mypage/license" element={<LicensePage />} />
           <Route path="/mypage/about" element={<AboutPage />} />
+          <Route path="/mypage/contact" element={<ContactPage />} />
           <Route path="/quiz" element={<QuizSelectPage />} />
           <Route path="/quiz/play" element={<QuizPlayPage />} />
           <Route path="/quiz/result" element={<QuizResultPage />} />

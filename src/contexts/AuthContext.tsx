@@ -13,6 +13,7 @@ interface AuthContextType {
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -173,6 +174,33 @@ export function AuthProvider({ children }: AuthProviderProps) {
     window.location.href = "/";
   };
 
+  const deleteAccount = async () => {
+    const userId = user?.id;
+    if (!userId) throw new Error("로그인 상태가 아닙니다.");
+
+    // 1. 학습 데이터 삭제
+    const { error: dataError } = await supabase
+      .from("user_data")
+      .delete()
+      .eq("user_id", userId);
+
+    if (dataError) {
+      console.error("데이터 삭제 오류:", dataError);
+      throw dataError;
+    }
+
+    // 2. 계정 삭제 (Supabase DB 함수 호출)
+    const { error: deleteError } = await supabase.rpc("delete_user");
+    if (deleteError) {
+      console.error("계정 삭제 오류:", deleteError);
+      throw deleteError;
+    }
+
+    // 3. 로그아웃 후 홈으로 이동
+    await supabase.auth.signOut();
+    window.location.href = "/";
+  };
+
   const value = {
     user,
     loading,
@@ -180,6 +208,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     signInWithEmail,
     signUpWithEmail,
     signOut,
+    deleteAccount,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

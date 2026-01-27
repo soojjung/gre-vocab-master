@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, BookOpen, BookMarked, LogOut, Volume2, VolumeX, Mail, FileText, Heart, Shield } from "lucide-react";
+import { ChevronRight, BookOpen, BookMarked, LogOut, Volume2, VolumeX, FileText, Heart, Shield, HelpCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserDataContext } from "@/contexts/UserDataContext";
 import { getTodayString } from "@/lib/date";
@@ -71,7 +71,7 @@ export function MyPageWrapper() {
     return (
       <div className="min-h-screen bg-gray-50 relative">
         <BackHeader title="마이페이지" onBack={() => navigate("/")} />
-        <div className="px-5 pt-[calc(4rem+env(safe-area-inset-top,0px))] pb-8 space-y-5">
+        <div className="px-5 pt-[calc(4.5rem+env(safe-area-inset-top,0px))] pb-8 space-y-5">
           <div className="bg-white rounded-2xl p-5">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 bg-gray-200 rounded-full animate-pulse" />
@@ -92,7 +92,7 @@ export function MyPageWrapper() {
     <div className="min-h-screen bg-gray-50 relative">
       <BackHeader title="마이페이지" onBack={() => navigate("/")} />
 
-      <div className="px-5 pt-[calc(4rem+env(safe-area-inset-top,0px))] pb-8 space-y-5">
+      <div className="px-5 pt-[calc(4.5rem+env(safe-area-inset-top,0px))] pb-8 space-y-5">
         {/* 프로필 */}
         <div className="bg-white rounded-2xl p-5">
           <div className="flex items-center gap-4">
@@ -235,6 +235,16 @@ export function MyPageWrapper() {
             <ChevronRight size={20} className="text-gray-400" />
           </button>
 
+          <button onClick={() => navigate("/mypage/contact")} className="w-full px-5 py-4 flex items-center justify-between border-b border-gray-100 active:bg-gray-50">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
+                <HelpCircle size={20} className="text-orange-500" />
+              </div>
+              <span className="font-medium text-gray-900">고객센터</span>
+            </div>
+            <ChevronRight size={20} className="text-gray-400" />
+          </button>
+
           <button onClick={() => navigate("/mypage/license")} className="w-full px-5 py-4 flex items-center justify-between border-b border-gray-100 active:bg-gray-50">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
@@ -255,11 +265,6 @@ export function MyPageWrapper() {
             <ChevronRight size={20} className="text-gray-400" />
           </button>
         </div>
-
-        {/* 문의하기 */}
-        <Button variant="secondary" onClick={() => (window.location.href = "mailto:sojjung3@gmail.com?subject=[단어의 신 GRE] 문의합니다")} icon={<Mail size={18} />}>
-          문의하기
-        </Button>
 
         {/* 로그아웃 */}
         <Button variant="danger" onClick={signOut} icon={<LogOut size={18} />}>

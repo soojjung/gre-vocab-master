@@ -60,7 +60,7 @@ export function StatsPage() {
     return (
       <div className="min-h-screen bg-gray-50 relative">
         <BackHeader title="학습 통계" onBack={() => navigate("/")} />
-        <div className="px-5 py-6 pt-[calc(4rem+env(safe-area-inset-top,0px))] pb-8 space-y-5">
+        <div className="px-5 py-6 pt-[calc(4.5rem+env(safe-area-inset-top,0px))] pb-8 space-y-5">
           <div className="bg-gray-300 rounded-2xl h-36 animate-pulse" />
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-white rounded-2xl h-24 animate-pulse" />
@@ -76,7 +76,7 @@ export function StatsPage() {
     <div className="min-h-screen bg-gray-50 relative">
       <BackHeader title="학습 통계" onBack={() => navigate("/")} />
 
-      <div className="px-5 py-6 pt-[calc(4rem+env(safe-area-inset-top,0px))] pb-8 space-y-5">
+      <div className="px-5 py-6 pt-[calc(4.5rem+env(safe-area-inset-top,0px))] pb-8 space-y-5">
         {/* 요약 카드 */}
         <div className="bg-black text-white rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
