@@ -19,7 +19,7 @@ function getAuthErrorMessage(error: unknown): string {
 }
 
 export function Login() {
-  const { signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
+  const { signInWithGoogle, signInWithApple, signInWithKakao, signInWithEmail, signUpWithEmail } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -56,6 +56,34 @@ export function Login() {
     }
   };
 
+  const handleAppleSignIn = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      await signInWithApple();
+    } catch (err: unknown) {
+      // 사용자가 취소한 경우 에러 표시하지 않음
+      const errStr = String(err);
+      if (!errStr.includes("1001") && !errStr.includes("cancel")) {
+        setError(getAuthErrorMessage(err));
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKakaoSignIn = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      await signInWithKakao();
+    } catch (err: unknown) {
+      setError(getAuthErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <main className="min-h-dvh bg-white px-5 flex flex-col pb-12 pt-[calc(2rem+env(safe-area-inset-top,0px))]">
       {/* 헤더 */}
@@ -79,6 +107,22 @@ export function Login() {
           <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
         </svg>
         Google로 계속하기
+      </button>
+
+      {/* 카카오 로그인 */}
+      <button onClick={handleKakaoSignIn} disabled={loading} className="w-full bg-[#FEE500] text-[#191919] py-4 rounded-xl font-medium flex items-center justify-center gap-3 active:bg-[#F0D800] transition-colors disabled:opacity-50 mt-3">
+        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="#191919">
+          <path d="M12 3C6.477 3 2 6.463 2 10.691c0 2.725 1.8 5.117 4.508 6.476-.144.522-.926 3.361-.961 3.581 0 0-.02.166.088.229.108.063.234.03.234.03.31-.044 3.588-2.345 4.155-2.74.638.094 1.293.143 1.976.143 5.523 0 10-3.463 10-7.719C22 6.463 17.523 3 12 3" />
+        </svg>
+        카카오로 계속하기
+      </button>
+
+      {/* Apple 로그인 */}
+      <button onClick={handleAppleSignIn} disabled={loading} className="w-full bg-black text-white py-4 rounded-xl font-medium flex items-center justify-center gap-3 active:bg-gray-800 transition-colors disabled:opacity-50 mt-3">
+        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
+        </svg>
+        Apple로 계속하기
       </button>
 
       {/* 구분선 */}

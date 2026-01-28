@@ -5,11 +5,14 @@ import { supabase } from "@/lib/supabase";
 import { Capacitor } from "@capacitor/core";
 import { App } from "@capacitor/app";
 import { Browser } from "@capacitor/browser";
+import { SignInWithApple } from "@capacitor-community/apple-sign-in";
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
+  signInWithApple: () => Promise<void>;
+  signInWithKakao: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -28,6 +31,13 @@ export function useAuth() {
 
 interface AuthProviderProps {
   children: ReactNode;
+}
+
+// Apple Sign-In nonce 생성
+function generateNonce(length = 32): string {
+  const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const values = crypto.getRandomValues(new Uint8Array(length));
+  return Array.from(values, (v) => charset[v % charset.length]).join("");
 }
 
 // 이전에 로그인한 적 있는지 확인 (FCP 최적화)
@@ -140,6 +150,90 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  const signInWithKakao = async () => {
+    const isNative = Capacitor.isNativePlatform();
+    const redirectTo = isNative ? "grevocab://auth/callback" : window.location.origin;
+
+    setLoading(true);
+
+    try {
+      if (isNative) {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: "kakao",
+          options: {
+            redirectTo,
+            skipBrowserRedirect: true,
+          },
+        });
+
+        if (error) throw error;
+
+        if (data?.url) {
+          try {
+            await Browser.open({ url: data.url, presentationStyle: "fullscreen" });
+          } catch {
+            window.open(data.url, "_blank");
+          }
+        }
+      } else {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: "kakao",
+          options: { redirectTo },
+        });
+
+        if (error) throw error;
+      }
+    } catch (error) {
+      setLoading(false);
+      console.error("[Auth] Kakao 로그인 오류:", error);
+      throw error;
+    }
+  };
+
+  const signInWithApple = async () => {
+    const isNative = Capacitor.isNativePlatform();
+
+    setLoading(true);
+
+    try {
+      if (isNative) {
+        // iOS 네이티브: ASAuthorizationController
+        const nonce = generateNonce();
+        const result = await SignInWithApple.authorize({
+          clientId: "com.sooya.grevocab",
+          redirectURI: "https://tmxnpuleiluskpifchsb.supabase.co/auth/v1/callback",
+          scopes: "email name",
+          nonce,
+        });
+
+        const { error } = await supabase.auth.signInWithIdToken({
+          provider: "apple",
+          token: result.response.identityToken,
+          nonce,
+        });
+
+        if (error) {
+          console.error("[Auth] Apple 토큰 교환 오류:", error);
+          throw error;
+        }
+      } else {
+        // 웹: OAuth 리디렉트
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: "apple",
+          options: {
+            redirectTo: window.location.origin,
+          },
+        });
+
+        if (error) throw error;
+      }
+    } catch (error) {
+      setLoading(false);
+      console.error("[Auth] Apple 로그인 오류:", error);
+      throw error;
+    }
+  };
+
   const signInWithEmail = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -179,10 +273,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (!userId) throw new Error("로그인 상태가 아닙니다.");
 
     // 1. 학습 데이터 삭제
-    const { error: dataError } = await supabase
-      .from("user_data")
-      .delete()
-      .eq("user_id", userId);
+    const { error: dataError } = await supabase.from("user_data").delete().eq("user_id", userId);
 
     if (dataError) {
       console.error("데이터 삭제 오류:", dataError);
@@ -205,6 +296,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     user,
     loading,
     signInWithGoogle,
+    signInWithApple,
+    signInWithKakao,
     signInWithEmail,
     signUpWithEmail,
     signOut,

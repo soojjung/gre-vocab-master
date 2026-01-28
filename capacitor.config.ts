@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
-  appId: "com.suya.grevocab",
+  appId: "com.sooya.grevocab",
   appName: "단어의 신 GRE",
   webDir: "dist",
   ios: {
