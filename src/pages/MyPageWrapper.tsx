@@ -7,10 +7,54 @@ import { getTodayString } from "@/lib/date";
 import { BackHeader } from "@/components/BackHeader";
 import { Button } from "@/components/common";
 
+// 사용자 표시 이름 추출 (Apple 프라이버시 릴레이 이메일 처리)
+function getDisplayName(user: ReturnType<typeof useAuth>["user"]): string {
+  if (!user) return "사용자";
+
+  // user_metadata에서 이름 확인 (Apple/Google 등에서 제공)
+  const fullName = user.user_metadata?.full_name || user.user_metadata?.name;
+  if (fullName) return fullName;
+
+  // 이메일이 Apple 프라이버시 릴레이인 경우
+  if (user.email?.endsWith("@privaterelay.appleid.com")) {
+    return "Apple 사용자";
+  }
+
+  // 일반 이메일
+  return user.email || "사용자";
+}
+
+// 아바타에 표시할 첫 글자 추출
+function getAvatarInitial(user: ReturnType<typeof useAuth>["user"]): string {
+  if (!user) return "U";
+
+  // 이름이 있으면 이름의 첫 글자
+  const fullName = user.user_metadata?.full_name || user.user_metadata?.name;
+  if (fullName && typeof fullName === "string") {
+    return fullName.charAt(0).toUpperCase();
+  }
+
+  // Apple 프라이버시 릴레이 이메일이면 A
+  if (user.email?.endsWith("@privaterelay.appleid.com")) {
+    return "A";
+  }
+
+  // 이메일 첫 글자 (숫자면 U로 대체)
+  const firstChar = user.email?.charAt(0);
+  if (firstChar && /[a-zA-Z]/.test(firstChar)) {
+    return firstChar.toUpperCase();
+  }
+
+  return "U";
+}
+
 export function MyPageWrapper() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { userData, loading, updateSettings } = useUserDataContext();
+
+  const displayName = getDisplayName(user);
+  const avatarInitial = getAvatarInitial(user);
 
   const [isEditingDday, setIsEditingDday] = useState(false);
   const [isEditingGoal, setIsEditingGoal] = useState(false);
@@ -97,10 +141,10 @@ export function MyPageWrapper() {
         <div className="bg-white rounded-2xl p-5">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 bg-black rounded-full flex items-center justify-center">
-              <span className="text-white text-xl font-bold">{user?.email?.charAt(0).toUpperCase() || "U"}</span>
+              <span className="text-white text-xl font-bold">{avatarInitial}</span>
             </div>
             <div>
-              <div className="font-medium text-gray-900">{user?.email || "사용자"}</div>
+              <div className="font-medium text-gray-900">{displayName}</div>
               <div className="text-sm text-gray-500">연속 {userData.streak}일 학습 중 🔥</div>
             </div>
           </div>
