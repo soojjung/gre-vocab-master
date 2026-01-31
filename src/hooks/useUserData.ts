@@ -5,17 +5,7 @@ import type { UserData, WordProgress, TodaySession } from "@/types";
 import { getDefaultUserData, SR_INTERVALS } from "@/types";
 
 // Supabase DB row를 UserData로 변환
-function rowToUserData(row: {
-  streak: number;
-  last_study_date: string | null;
-  target_date: string | null;
-  daily_goal: number;
-  today_learned: string[];
-  onboarding_complete: boolean;
-  auto_speak: boolean;
-  today_session: TodaySession | null;
-  progress: Record<string, WordProgress>;
-}): UserData {
+function rowToUserData(row: { streak: number; last_study_date: string | null; target_date: string | null; daily_goal: number; today_learned: string[]; onboarding_complete: boolean; auto_speak: boolean; today_session: TodaySession | null; progress: Record<string, WordProgress> }): UserData {
   const defaultData = getDefaultUserData();
   return {
     targetDate: row.target_date ?? defaultData.targetDate,
@@ -79,11 +69,7 @@ export function useUserData(userId?: string | null) {
       }
 
       try {
-        const { data: row, error } = await supabase
-          .from("user_data")
-          .select("*")
-          .eq("user_id", userId)
-          .maybeSingle();
+        const { data: row, error } = await supabase.from("user_data").select("*").eq("user_id", userId).maybeSingle();
 
         if (error) {
           console.error("[useUserData] Error loading data:", error);
@@ -92,9 +78,7 @@ export function useUserData(userId?: string | null) {
           const defaultData = getDefaultUserData();
           const newRow = userDataToRow(defaultData, userId);
 
-          const { error: insertError } = await supabase
-            .from("user_data")
-            .upsert(newRow, { onConflict: "user_id" });
+          const { error: insertError } = await supabase.from("user_data").upsert(newRow, { onConflict: "user_id" });
 
           if (insertError) {
             console.error("[useUserData] Error creating user data:", insertError);
@@ -277,9 +261,7 @@ export function useUserData(userId?: string | null) {
         isSaving.current = true;
         const row = userDataToRow(newData, userId);
 
-        const { error } = await supabase
-          .from("user_data")
-          .upsert(row, { onConflict: "user_id" });
+        const { error } = await supabase.from("user_data").upsert(row, { onConflict: "user_id" });
 
         isSaving.current = false;
 
@@ -303,8 +285,8 @@ export function useUserData(userId?: string | null) {
       const today = getTodayString();
       const existingSession = userData.todaySession;
 
-      // 오늘 세션이 이미 있고 완료되지 않았으면 반환
-      if (existingSession && existingSession.date === today && !existingSession.completed) {
+      // 오늘 세션이 이미 있으면 반환 (완료 여부와 관계없이 같은 단어 set 유지)
+      if (existingSession && existingSession.date === today) {
         return existingSession;
       }
 
@@ -344,11 +326,11 @@ export function useUserData(userId?: string | null) {
     [setUserData]
   );
 
-  // 오늘의 세션 가져오기 (있으면)
+  // 오늘의 세션 가져오기 (있으면, 완료 여부와 관계없이)
   const getTodaySession = useCallback((): TodaySession | null => {
     const today = getTodayString();
     const session = userData.todaySession;
-    if (session && session.date === today && !session.completed) {
+    if (session && session.date === today) {
       return session;
     }
     return null;

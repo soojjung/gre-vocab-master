@@ -37,9 +37,5 @@ interface UserDataProviderProps {
 export function UserDataProvider({ userId, children }: UserDataProviderProps) {
   const userDataHook = useUserData(userId);
 
-  return (
-    <UserDataContext.Provider value={userDataHook}>
-      {children}
-    </UserDataContext.Provider>
-  );
+  return <UserDataContext.Provider value={userDataHook}>{children}</UserDataContext.Provider>;
 }

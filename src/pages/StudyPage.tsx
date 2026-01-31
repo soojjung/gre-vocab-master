@@ -1,138 +1,43 @@
-import { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import { words } from "@/data/words";
-import { useUserDataContext } from "@/contexts/UserDataContext";
-import { getTodayString } from "@/lib/date";
-import { speakWord } from "@/lib/tts";
-import { createShuffledIndices } from "@/lib/shuffle";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/common";
-import { FlashCard, StudyComplete, StudyHeader, AnswerButtons } from "@/components/study";
+import { FlashCard, StudyComplete, StudyHeader, AnswerButtons, AutoSpeakToggle } from "@/components/study";
+import { useStudySession } from "@/hooks/useStudySession";
 
 export function StudyPage() {
   const navigate = useNavigate();
-  const { userData, loading, recordAnswer, updateSettings, getOrCreateTodaySession, updateSessionProgress } = useUserDataContext();
+  const [searchParams] = useSearchParams();
+  const isReviewOnlyMode = searchParams.get("mode") === "review";
 
-  // 오늘 날짜 기반 셔플 순서 (같은 날에는 항상 동일)
-  const todayShuffledIndices = useMemo(() => {
-    return createShuffledIndices(words.length, getTodayString());
-  }, []);
-
-  const [isFlipped, setIsFlipped] = useState(false);
-  const [sessionComplete, setSessionComplete] = useState(false);
-  const [sessionStats, setSessionStats] = useState({ correct: 0, wrong: 0, wrongWordIds: [] as number[] });
-  const [reviewMode, setReviewMode] = useState(false);
-  const [reviewIndex, setReviewIndex] = useState(0);
-
-  // 오늘 학습할 단어 ID 생성
-  const generateWordIds = useMemo(() => {
-    const today = getTodayString();
-
-    const reviewWordIds = words
-      .filter((word) => {
-        const progress = userData.progress[String(word.id)];
-        return progress && progress.status === "learning" && progress.nextReview <= today;
-      })
-      .map((w) => w.id);
-
-    const newWordIds = new Set(
-      words
-        .filter((word) => {
-          const progress = userData.progress[String(word.id)];
-          return !progress || progress.status === "new";
-        })
-        .map((w) => w.id)
-    );
-
-    const shuffledNewWordIds = todayShuffledIndices.filter((idx) => newWordIds.has(words[idx].id)).map((idx) => words[idx].id);
-
-    return [...reviewWordIds, ...shuffledNewWordIds].slice(0, userData.dailyGoal);
-  }, [userData.progress, userData.dailyGoal, todayShuffledIndices]);
-
-  // 오늘의 세션
-  const todaySession = useMemo(() => {
-    const today = getTodayString();
-    const existingSession = userData.todaySession;
-    if (existingSession && existingSession.date === today && !existingSession.completed) {
-      return existingSession;
-    }
-    return null;
-  }, [userData.todaySession]);
-
-  // 세션이 없으면 생성
-  const sessionCreated = useRef(false);
-  useEffect(() => {
-    if (!todaySession && !sessionCreated.current && generateWordIds.length > 0) {
-      sessionCreated.current = true;
-      getOrCreateTodaySession(generateWordIds);
-    }
-  }, [todaySession, generateWordIds, getOrCreateTodaySession]);
-
-  const currentIndex = todaySession?.currentIndex ?? 0;
-
-  const studyWords = useMemo(() => {
-    if (todaySession) {
-      return todaySession.wordIds.map((id) => words.find((w) => w.id === id)).filter((w): w is (typeof words)[0] => w !== undefined);
-    }
-    return [];
-  }, [todaySession]);
-
-  const currentWord = studyWords[currentIndex];
-
-  // 자동 발음
-  useEffect(() => {
-    if (currentWord && userData.autoSpeak && !isFlipped) {
-      speakWord(currentWord.word);
-    }
-  }, [currentWord, userData.autoSpeak, isFlipped]);
-
-  const handleFlip = useCallback(() => setIsFlipped(true), []);
-
-  const toggleAutoSpeak = useCallback(() => {
-    updateSettings({ autoSpeak: !userData.autoSpeak });
-  }, [updateSettings, userData.autoSpeak]);
-
-  const handleAnswer = useCallback(
-    (correct: boolean) => {
-      if (!currentWord) return;
-
-      recordAnswer(String(currentWord.id), correct);
-      setSessionStats((prev) => ({
-        correct: prev.correct + (correct ? 1 : 0),
-        wrong: prev.wrong + (correct ? 0 : 1),
-        wrongWordIds: correct ? prev.wrongWordIds : [...prev.wrongWordIds, currentWord.id],
-      }));
-
-      if (currentIndex < studyWords.length - 1) {
-        updateSessionProgress(currentIndex + 1);
-        setIsFlipped(false);
-      } else {
-        updateSessionProgress(currentIndex, true);
-        setSessionComplete(true);
-      }
-    },
-    [currentWord, currentIndex, studyWords.length, recordAnswer, updateSessionProgress]
-  );
-
-  // 복습 관련
-  const reviewWords = useMemo(() => {
-    return sessionStats.wrongWordIds.map((id) => words.find((w) => w.id === id)).filter((w): w is (typeof words)[0] => w !== undefined);
-  }, [sessionStats.wrongWordIds]);
-
-  const startReview = useCallback(() => {
-    setReviewMode(true);
-    setReviewIndex(0);
-    setIsFlipped(false);
-  }, []);
-
-  const handleReviewNext = useCallback(() => {
-    if (reviewIndex < reviewWords.length - 1) {
-      setReviewIndex((prev) => prev + 1);
-      setIsFlipped(false);
-    } else {
-      setReviewMode(false);
-      setSessionStats((prev) => ({ ...prev, wrongWordIds: [] }));
-    }
-  }, [reviewIndex, reviewWords.length]);
+  const {
+    loading,
+    isFlipped,
+    sessionComplete,
+    sessionStats,
+    reviewMode,
+    reviewIndex,
+    quizMode,
+    quizIndex,
+    srReviewIndex,
+    srReviewComplete,
+    userData,
+    currentWord,
+    currentIndex,
+    studyWords,
+    reviewWords,
+    srReviewWords,
+    todaySession,
+    handleFlip,
+    handleNext,
+    startReview,
+    handleReviewAnswer,
+    exitReviewMode,
+    startQuiz,
+    handleQuizAnswer,
+    exitQuizMode,
+    handleSrReviewNext,
+    toggleAutoSpeak,
+    setIsFlipped,
+  } = useStudySession(isReviewOnlyMode);
 
   // 로딩
   if (loading) {
@@ -151,24 +56,73 @@ export function StudyPage() {
     );
   }
 
-  // 완료 화면
-  if (sessionComplete && !reviewMode) {
-    return <StudyComplete stats={sessionStats} onGoHome={() => navigate("/")} onStartReview={startReview} />;
-  }
+  // SR 복습 전용 모드
+  if (isReviewOnlyMode) {
+    if (srReviewComplete || srReviewWords.length === 0) {
+      return (
+        <div className="min-h-dvh bg-white px-5 py-8 flex flex-col">
+          <div className="flex-1 flex flex-col items-center justify-center text-center">
+            <div className="text-6xl mb-6">🎉</div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">{srReviewWords.length === 0 ? "복습할 단어가 없어요" : "복습 완료!"}</h2>
+            <p className="text-gray-500 mb-8">{srReviewWords.length === 0 ? "새로운 단어를 학습해보세요" : "수고했어요! 간격 반복 알고리즘에 따라 다음 복습일이 설정되었어요"}</p>
+            {srReviewWords.length > 0 && (
+              <div className="bg-gray-50 rounded-2xl p-6 w-full max-w-xs mb-8">
+                <div className="text-4xl font-bold text-gray-900 mb-2">{srReviewWords.length}개</div>
+                <div className="text-sm text-gray-500">단어 복습 완료</div>
+              </div>
+            )}
+          </div>
+          <Button onClick={() => navigate("/")}>홈으로 돌아가기</Button>
+        </div>
+      );
+    }
 
-  // 복습 모드
-  if (reviewMode && reviewWords.length > 0) {
-    const reviewWord = reviewWords[reviewIndex];
-
+    const currentSrWord = srReviewWords[srReviewIndex];
     return (
       <div className="min-h-dvh bg-white px-5 pb-8 flex flex-col pt-[max(2rem,env(safe-area-inset-top))]">
-        <StudyHeader current={reviewIndex + 1} total={reviewWords.length} onBack={() => setReviewMode(false)} />
-        <FlashCard word={reviewWord} isFlipped={isFlipped} onFlip={() => setIsFlipped(true)} />
+        <StudyHeader current={srReviewIndex + 1} total={srReviewWords.length} onBack={() => navigate("/")} />
+        <div className="mb-2 text-center">
+          <span className="text-xs text-amber-600 bg-amber-50 px-3 py-1 rounded-full">SR 복습</span>
+        </div>
+        <FlashCard word={currentSrWord} isFlipped={isFlipped} onFlip={() => setIsFlipped(true)} />
+        <AutoSpeakToggle enabled={userData.autoSpeak} onToggle={toggleAutoSpeak} />
         {isFlipped && (
           <div className="mt-6">
-            <Button onClick={handleReviewNext}>{reviewIndex < reviewWords.length - 1 ? "다음 단어" : "복습 완료"}</Button>
+            <Button onClick={handleSrReviewNext}>{srReviewIndex < srReviewWords.length - 1 ? "다음 단어" : "복습 완료"}</Button>
           </div>
         )}
+      </div>
+    );
+  }
+
+  // 완료 화면
+  if ((sessionComplete || todaySession?.completed) && !reviewMode && !quizMode) {
+    const showQuizButton = sessionStats.correct === 0 && sessionStats.wrong === 0;
+    return <StudyComplete stats={sessionStats} onGoHome={() => navigate("/")} onStartReview={startReview} onStartQuiz={startQuiz} showQuizButton={showQuizButton} />;
+  }
+
+  // 복습 모드 (틀린 단어)
+  if (reviewMode && reviewWords.length > 0) {
+    const reviewWord = reviewWords[reviewIndex];
+    return (
+      <div className="min-h-dvh bg-white px-5 pb-8 flex flex-col pt-[max(2rem,env(safe-area-inset-top))]">
+        <StudyHeader current={reviewIndex + 1} total={reviewWords.length} onBack={exitReviewMode} />
+        <FlashCard word={reviewWord} isFlipped={isFlipped} onFlip={() => setIsFlipped(true)} />
+        <AutoSpeakToggle enabled={userData.autoSpeak} onToggle={toggleAutoSpeak} />
+        {isFlipped && <AnswerButtons onAnswer={handleReviewAnswer} />}
+      </div>
+    );
+  }
+
+  // 퀴즈 모드
+  if (quizMode && studyWords.length > 0) {
+    const quizWord = studyWords[quizIndex];
+    return (
+      <div className="min-h-dvh bg-white px-5 pb-8 flex flex-col pt-[max(2rem,env(safe-area-inset-top))]">
+        <StudyHeader current={quizIndex + 1} total={studyWords.length} onBack={exitQuizMode} />
+        <FlashCard word={quizWord} isFlipped={isFlipped} onFlip={() => setIsFlipped(true)} />
+        <AutoSpeakToggle enabled={userData.autoSpeak} onToggle={toggleAutoSpeak} />
+        {isFlipped && <AnswerButtons onAnswer={handleQuizAnswer} />}
       </div>
     );
   }
@@ -190,16 +144,12 @@ export function StudyPage() {
     <div className="min-h-dvh bg-white px-5 pb-8 flex flex-col pt-[max(2rem,env(safe-area-inset-top))]">
       <StudyHeader current={currentIndex + 1} total={studyWords.length} onBack={() => navigate(-1)} />
       <FlashCard word={currentWord} isFlipped={isFlipped} onFlip={handleFlip} />
-
-      {/* 자동 발음 토글 */}
-      <div className="flex items-center justify-end gap-2 mt-6">
-        <span className="text-sm text-gray-600">자동 발음</span>
-        <button onClick={toggleAutoSpeak} className={`relative w-11 h-6 rounded-full transition-colors ${userData.autoSpeak ? "bg-black" : "bg-gray-300"}`}>
-          <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${userData.autoSpeak ? "translate-x-6" : "translate-x-1"}`} />
-        </button>
-      </div>
-
-      {isFlipped && <AnswerButtons onAnswer={handleAnswer} />}
+      <AutoSpeakToggle enabled={userData.autoSpeak} onToggle={toggleAutoSpeak} />
+      {isFlipped && (
+        <div className="mt-6">
+          <Button onClick={handleNext}>{currentIndex < studyWords.length - 1 ? "다음 단어" : "학습 완료"}</Button>
+        </div>
+      )}
     </div>
   );
 }

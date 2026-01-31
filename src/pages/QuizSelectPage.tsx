@@ -9,8 +9,6 @@ import { Button } from "@/components/common";
 
 type QuizType = "fill-blank" | "multiple-choice";
 
-const QUIZ_COUNT = 20;
-
 export function QuizSelectPage() {
   const navigate = useNavigate();
   const { userData } = useUserDataContext();
@@ -29,7 +27,7 @@ export function QuizSelectPage() {
 
   const handleStartQuiz = () => {
     setQuizType(selectedType);
-    setQuizCount(Math.min(QUIZ_COUNT, quizWords.length));
+    setQuizCount(quizWords.length);
     navigate("/quiz/play");
   };
 

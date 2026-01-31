@@ -1,15 +1,12 @@
-import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { User, BadgeQuestionMark, BookOpen, BookMarked, Flame, BarChart3 } from "lucide-react";
-import { words } from "@/data/words";
 import { useUserDataContext } from "@/contexts/UserDataContext";
 import { Button } from "@/components/common";
 
 export function HomePage() {
   const navigate = useNavigate();
-  const { userData, loading, getDday, getReviewCount, getOverallProgress } = useUserDataContext();
+  const { userData, loading, getDday, getReviewCount } = useUserDataContext();
 
-  const overallProgress = useMemo(() => getOverallProgress(words.length), [getOverallProgress]);
   const dday = getDday();
   const reviewCount = getReviewCount();
 
@@ -54,20 +51,6 @@ export function HomePage() {
           )}
         </div>
 
-        {/* 전체 진도율 */}
-        <div className="bg-gray-50 rounded-2xl p-5 mb-4">
-          <div className="flex justify-between items-center mb-3">
-            <span className="text-sm text-gray-600">전체 진도율</span>
-            <span className="text-sm font-medium text-gray-900">
-              {overallProgress.mastered} / {overallProgress.total}
-            </span>
-          </div>
-          <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-            <div className="h-full bg-black rounded-full transition-all duration-500" style={{ width: `${overallProgress.percentage}%` }} />
-          </div>
-          <div className="text-right mt-2 text-xs text-gray-500">{overallProgress.percentage}% 완료</div>
-        </div>
-
         {/* 오늘 학습 현황 */}
         <div className="bg-gray-50 rounded-2xl p-5 mb-4">
           <div className="flex justify-between items-center mb-3">
@@ -86,20 +69,23 @@ export function HomePage() {
           </div>
         </div>
 
-        {/* 복습 대기 */}
-        {reviewCount > 0 && (
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-6">
+        {/* SR 복습 */}
+        <div className={`rounded-2xl p-5 mb-6 ${reviewCount > 0 ? "bg-amber-50 border border-amber-200" : "bg-gray-50"}`}>
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
-                <BookOpen size={20} className="text-amber-600" />
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${reviewCount > 0 ? "bg-amber-100" : "bg-gray-200"}`}>
+                <BookOpen size={20} className={reviewCount > 0 ? "text-amber-600" : "text-gray-400"} />
               </div>
               <div>
-                <div className="text-sm text-amber-800 font-medium">복습할 단어가 있어요</div>
-                <div className="text-xs text-amber-600">{reviewCount}개 대기 중</div>
+                <div className={`text-sm font-medium ${reviewCount > 0 ? "text-amber-800" : "text-gray-600"}`}>{reviewCount > 0 ? "복습할 단어가 있어요" : "SR 복습"}</div>
+                <div className={`text-xs ${reviewCount > 0 ? "text-amber-600" : "text-gray-400"}`}>{reviewCount > 0 ? `${reviewCount}개 대기 중` : "복습 대기 없음"}</div>
               </div>
             </div>
+            <button onClick={() => navigate("/study?mode=review")} disabled={reviewCount === 0} className={`px-4 py-2 text-sm font-medium rounded-xl transition-colors ${reviewCount > 0 ? "bg-amber-500 text-white hover:bg-amber-600" : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}>
+              복습하기
+            </button>
           </div>
-        )}
+        </div>
 
         {/* 액션 버튼들 */}
         <nav className="space-y-3 mt-8" aria-label="주요 메뉴">
