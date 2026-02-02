@@ -31,6 +31,7 @@ export interface TodaySession {
 export interface UserData {
   targetDate: string; // ISO date string (D-day 목표일)
   dailyGoal: number; // 일일 목표 단어 수
+  resetHour: number; // 학습 리셋 시간 (0-23, 기본값 3 = 새벽 3시)
   progress: Record<string, WordProgress>; // key: word id
   todayLearned: string[]; // 오늘 학습한 단어 id 배열
   lastStudyDate: string; // ISO date string
@@ -52,12 +53,13 @@ export const getDefaultUserData = (): UserData => {
   return {
     targetDate: `${year}-${month}-${day}`,
     dailyGoal: 25,
+    resetHour: 3, // 기본값: 새벽 3시
     progress: {},
     todayLearned: [],
     lastStudyDate: "",
     streak: 0,
     onboardingComplete: false,
-    autoSpeak: false,
+    autoSpeak: true,
   };
 };
 

@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useWords } from "@/contexts/WordsContext";
 import { useUserDataContext } from "@/contexts/UserDataContext";
-import { getTodayString } from "@/lib/date";
+import { getTodayStringWithResetHour } from "@/lib/date";
 import { speakWord } from "@/lib/tts";
 import { createShuffledIndices } from "@/lib/shuffle";
 
@@ -12,8 +12,8 @@ export function useStudySession(isReviewOnlyMode: boolean) {
 
   // 오늘 날짜 기반 셔플 순서
   const todayShuffledIndices = useMemo(() => {
-    return createShuffledIndices(words.length, getTodayString());
-  }, [words.length]);
+    return createShuffledIndices(words.length, getTodayStringWithResetHour(userData.resetHour));
+  }, [words.length, userData.resetHour]);
 
   // 상태
   const [isFlipped, setIsFlipped] = useState(false);
@@ -29,12 +29,12 @@ export function useStudySession(isReviewOnlyMode: boolean) {
 
   // SR 복습 대상 단어
   const srReviewWords = useMemo(() => {
-    const today = getTodayString();
+    const today = getTodayStringWithResetHour(userData.resetHour);
     return words.filter((word) => {
       const progress = userData.progress[String(word.id)];
       return progress && progress.status === "learning" && progress.nextReview <= today;
     });
-  }, [words, userData.progress]);
+  }, [words, userData.resetHour, userData.progress]);
 
   // 오늘 학습할 단어 ID (새 단어만)
   const generateWordIds = useMemo(() => {
@@ -52,13 +52,13 @@ export function useStudySession(isReviewOnlyMode: boolean) {
 
   // 오늘의 세션
   const todaySession = useMemo(() => {
-    const today = getTodayString();
+    const today = getTodayStringWithResetHour(userData.resetHour);
     const existingSession = userData.todaySession;
     if (existingSession && existingSession.date === today) {
       return existingSession;
     }
     return null;
-  }, [userData.todaySession]);
+  }, [userData.resetHour, userData.todaySession]);
 
   // 세션 생성
   const sessionCreated = useRef(false);

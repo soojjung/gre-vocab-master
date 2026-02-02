@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { getTodayString, getDateAfterDays } from "@/lib/date";
 
+const TOTAL_WORDS = 1500;
+
 interface OnboardingProps {
-  onComplete: (targetDate: string, dailyGoal: number) => Promise<void>;
+  onComplete: (targetDate: string, dailyGoal: number, resetHour: number) => Promise<void>;
 }
 
 export function Onboarding({ onComplete }: OnboardingProps) {
@@ -13,7 +15,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
 
   const handleComplete = async () => {
     setSaving(true);
-    await onComplete(targetDate, dailyGoal);
+    await onComplete(targetDate, dailyGoal, 3); // 기본값: 새벽 3시 (마이페이지에서 수정 가능)
     setSaving(false);
   };
 
@@ -94,9 +96,9 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           {/* 빠른 선택 */}
           <div className="grid grid-cols-3 gap-2">
             {[
-              { value: 15, label: "여유롭게", desc: "~10분" },
-              { value: 25, label: "권장", desc: "~15분" },
-              { value: 40, label: "빡세게", desc: "~25분" },
+              { value: 25, label: "여유롭게", desc: "~15분" },
+              { value: 50, label: "권장", desc: "~30분" },
+              { value: 100, label: "빡세게", desc: "~60분" },
             ].map((option) => (
               <button key={option.value} onClick={() => setDailyGoal(option.value)} className={`py-3 rounded-xl text-sm transition-colors ${dailyGoal === option.value ? "bg-black text-white" : "bg-gray-100 text-gray-600 active:bg-gray-200"}`}>
                 <div className="font-medium">{option.label}</div>
@@ -108,7 +110,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           {/* 예상 완료일 */}
           <div className="bg-green-50 rounded-xl p-4 mt-6">
             <div className="text-sm text-green-800">
-              이 속도로 학습하면 <strong>{Math.ceil(100 / dailyGoal)}일</strong>이면 100단어를 마스터할 수 있어요!
+              이 속도로 학습하면 <strong>{Math.ceil(TOTAL_WORDS / dailyGoal)}일</strong>이면 {TOTAL_WORDS}단어를 마스터할 수 있어요!
             </div>
           </div>
 

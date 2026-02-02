@@ -1,15 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
-import { getTodayString, getYesterdayString, getLocalDateString } from "@/lib/date";
+import { getTodayStringWithResetHour, getYesterdayStringWithResetHour, getLocalDateString } from "@/lib/date";
 import type { UserData, WordProgress, TodaySession } from "@/types";
 import { getDefaultUserData, SR_INTERVALS } from "@/types";
 
 // Supabase DB row를 UserData로 변환
-function rowToUserData(row: { streak: number; last_study_date: string | null; target_date: string | null; daily_goal: number; today_learned: string[]; onboarding_complete: boolean; auto_speak: boolean; today_session: TodaySession | null; progress: Record<string, WordProgress> }): UserData {
+function rowToUserData(row: { streak: number; last_study_date: string | null; target_date: string | null; daily_goal: number; reset_hour?: number; today_learned: string[]; onboarding_complete: boolean; auto_speak: boolean; today_session: TodaySession | null; progress: Record<string, WordProgress> }): UserData {
   const defaultData = getDefaultUserData();
   return {
     targetDate: row.target_date ?? defaultData.targetDate,
     dailyGoal: row.daily_goal,
+    resetHour: row.reset_hour ?? defaultData.resetHour,
     progress: row.progress ?? {},
     todayLearned: row.today_learned ?? [],
     lastStudyDate: row.last_study_date ?? "",
@@ -28,6 +29,7 @@ function userDataToRow(userData: UserData, userId: string) {
     last_study_date: userData.lastStudyDate || null,
     target_date: userData.targetDate,
     daily_goal: userData.dailyGoal,
+    reset_hour: userData.resetHour,
     today_learned: userData.todayLearned,
     onboarding_complete: userData.onboardingComplete,
     auto_speak: userData.autoSpeak,
@@ -86,11 +88,12 @@ export function useUserData(userId?: string | null) {
           setUserDataState(defaultData);
         } else {
           const data = rowToUserData(row);
+          const todayStr = getTodayStringWithResetHour(data.resetHour);
 
           // 날짜가 바뀌면 todayLearned 초기화
-          if (data.lastStudyDate !== getTodayString()) {
-            const yesterdayStr = getYesterdayString();
-            if (data.lastStudyDate !== yesterdayStr && data.lastStudyDate !== getTodayString()) {
+          if (data.lastStudyDate !== todayStr) {
+            const yesterdayStr = getYesterdayStringWithResetHour(data.resetHour);
+            if (data.lastStudyDate !== yesterdayStr && data.lastStudyDate !== todayStr) {
               data.streak = 0;
             }
             data.todayLearned = [];
@@ -141,7 +144,7 @@ export function useUserData(userId?: string | null) {
   const recordAnswer = useCallback(
     (wordId: string, correct: boolean) => {
       setUserData((prev) => {
-        const today = getTodayString();
+        const today = getTodayStringWithResetHour(prev.resetHour);
         const progress = prev.progress[wordId] || {
           status: "new",
           correctCount: 0,
@@ -185,7 +188,7 @@ export function useUserData(userId?: string | null) {
 
         let newStreak = prev.streak;
         if (prev.lastStudyDate !== today) {
-          const yesterdayStr = getYesterdayString();
+          const yesterdayStr = getYesterdayStringWithResetHour(prev.resetHour);
           newStreak = prev.lastStudyDate === yesterdayStr ? prev.streak + 1 : 1;
         }
 
@@ -212,7 +215,7 @@ export function useUserData(userId?: string | null) {
           status: "new",
           correctCount: 0,
           wrongCount: 0,
-          nextReview: getTodayString(),
+          nextReview: getTodayStringWithResetHour(prev.resetHour),
           interval: 0,
           bookmarked: false,
         };
@@ -234,7 +237,7 @@ export function useUserData(userId?: string | null) {
 
   // 설정 변경
   const updateSettings = useCallback(
-    (settings: { targetDate?: string; dailyGoal?: number; autoSpeak?: boolean }) => {
+    (settings: { targetDate?: string; dailyGoal?: number; resetHour?: number; autoSpeak?: boolean }) => {
       setUserData((prev) => ({
         ...prev,
         ...settings,
@@ -245,11 +248,12 @@ export function useUserData(userId?: string | null) {
 
   // 온보딩 완료
   const completeOnboarding = useCallback(
-    async (targetDate: string, dailyGoal: number) => {
+    async (targetDate: string, dailyGoal: number, resetHour: number = 3) => {
       const newData: UserData = {
         ...userData,
         targetDate,
         dailyGoal,
+        resetHour,
         onboardingComplete: true,
       };
 
@@ -282,7 +286,7 @@ export function useUserData(userId?: string | null) {
   // 오늘의 학습 세션 시작 또는 가져오기
   const getOrCreateTodaySession = useCallback(
     (wordIds: number[]): TodaySession => {
-      const today = getTodayString();
+      const today = getTodayStringWithResetHour(userData.resetHour);
       const existingSession = userData.todaySession;
 
       // 오늘 세션이 이미 있으면 반환 (완료 여부와 관계없이 같은 단어 set 유지)
@@ -305,7 +309,7 @@ export function useUserData(userId?: string | null) {
 
       return newSession;
     },
-    [userData.todaySession, setUserData]
+    [userData.resetHour, userData.todaySession, setUserData]
   );
 
   // 세션 진행 상황 업데이트
@@ -328,13 +332,13 @@ export function useUserData(userId?: string | null) {
 
   // 오늘의 세션 가져오기 (있으면, 완료 여부와 관계없이)
   const getTodaySession = useCallback((): TodaySession | null => {
-    const today = getTodayString();
+    const today = getTodayStringWithResetHour(userData.resetHour);
     const session = userData.todaySession;
     if (session && session.date === today) {
       return session;
     }
     return null;
-  }, [userData.todaySession]);
+  }, [userData.resetHour, userData.todaySession]);
 
   // D-day 계산
   const getDday = useCallback(() => {
@@ -348,11 +352,11 @@ export function useUserData(userId?: string | null) {
 
   // 복습 대기 단어 수
   const getReviewCount = useCallback(() => {
-    const today = getTodayString();
+    const today = getTodayStringWithResetHour(userData.resetHour);
     return Object.entries(userData.progress).filter(([, p]) => {
       return p.status === "learning" && p.nextReview <= today;
     }).length;
-  }, [userData.progress]);
+  }, [userData.resetHour, userData.progress]);
 
   // 전체 진도율
   const getOverallProgress = useCallback(

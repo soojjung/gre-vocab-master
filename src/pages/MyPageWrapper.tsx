@@ -58,13 +58,17 @@ export function MyPageWrapper() {
 
   const [isEditingDday, setIsEditingDday] = useState(false);
   const [isEditingGoal, setIsEditingGoal] = useState(false);
+  const [isEditingResetHour, setIsEditingResetHour] = useState(false);
+  const [showResetHourConfirm, setShowResetHourConfirm] = useState(false);
   // 편집 중일 때만 사용하는 임시 값 (null이면 편집 중 아님)
   const [editTargetDate, setEditTargetDate] = useState<string | null>(null);
   const [editDailyGoal, setEditDailyGoal] = useState<number | null>(null);
+  const [editResetHour, setEditResetHour] = useState<number | null>(null);
 
   // 표시할 값: 편집 중이면 임시 값, 아니면 실제 userData 값
   const displayTargetDate = editTargetDate ?? userData.targetDate;
   const displayDailyGoal = editDailyGoal ?? userData.dailyGoal;
+  const displayResetHour = editResetHour ?? userData.resetHour;
 
   const getDday = () => {
     const target = new Date(displayTargetDate);
@@ -108,6 +112,55 @@ export function MyPageWrapper() {
   const handleCancelGoal = () => {
     setEditDailyGoal(null);
     setIsEditingGoal(false);
+  };
+
+  const handleStartEditResetHour = () => {
+    setEditResetHour(userData.resetHour);
+    setIsEditingResetHour(true);
+  };
+
+  // 리셋 시간 변경 시 학습 단어가 바뀌는지 확인
+  const willWordsChange = (oldResetHour: number, newResetHour: number): boolean => {
+    const currentHour = new Date().getHours();
+    const wasBeforeReset = currentHour < oldResetHour;
+    const willBeBeforeReset = currentHour < newResetHour;
+    return wasBeforeReset !== willBeBeforeReset;
+  };
+
+  const handleSaveResetHour = () => {
+    if (editResetHour !== null && editResetHour !== userData.resetHour) {
+      if (willWordsChange(userData.resetHour, editResetHour)) {
+        setShowResetHourConfirm(true);
+        return;
+      }
+      updateSettings({ resetHour: editResetHour });
+    }
+    setEditResetHour(null);
+    setIsEditingResetHour(false);
+  };
+
+  const handleConfirmResetHour = () => {
+    if (editResetHour !== null) {
+      updateSettings({ resetHour: editResetHour });
+    }
+    setEditResetHour(null);
+    setIsEditingResetHour(false);
+    setShowResetHourConfirm(false);
+  };
+
+  const handleCancelResetHourConfirm = () => {
+    setShowResetHourConfirm(false);
+  };
+
+  const handleCancelResetHour = () => {
+    setEditResetHour(null);
+    setIsEditingResetHour(false);
+  };
+
+  const formatResetHour = (hour: number) => {
+    if (hour === 0) return "자정";
+    if (hour < 6) return `새벽 ${hour}시`;
+    return `오전 ${hour}시`;
   };
 
   // 로딩 중일 때 스켈레톤 표시
@@ -219,6 +272,39 @@ export function MyPageWrapper() {
             </div>
           </div>
 
+          {/* 리셋 시간 설정 */}
+          <div className="px-5 py-4 border-b border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-medium text-gray-900">하루 리셋 시간</div>
+                <div className="text-sm text-gray-500">
+                  {isEditingResetHour ? (
+                    <div className="mt-2 flex items-center gap-3">
+                      <input type="range" min="0" max="9" step="1" value={displayResetHour} onChange={(e) => setEditResetHour(Number(e.target.value))} className="w-32 accent-black" />
+                      <span className="text-gray-900 font-medium">{formatResetHour(displayResetHour)}</span>
+                    </div>
+                  ) : (
+                    formatResetHour(userData.resetHour)
+                  )}
+                </div>
+              </div>
+              {isEditingResetHour ? (
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="sm" fullWidth={false} onClick={handleCancelResetHour}>
+                    취소
+                  </Button>
+                  <Button size="sm" fullWidth={false} onClick={handleSaveResetHour}>
+                    저장
+                  </Button>
+                </div>
+              ) : (
+                <Button variant="ghost" size="sm" fullWidth={false} onClick={handleStartEditResetHour}>
+                  수정
+                </Button>
+              )}
+            </div>
+          </div>
+
           {/* 자동 발음 설정 */}
           <div className="px-5 py-4">
             <div className="flex items-center justify-between">
@@ -315,6 +401,24 @@ export function MyPageWrapper() {
           로그아웃
         </Button>
       </div>
+
+      {/* 리셋 시간 변경 확인 모달 */}
+      {showResetHourConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-5">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">리셋 시간 변경</h3>
+            <p className="text-gray-600 text-sm mb-6">리셋 시간을 변경하면 오늘의 학습 단어가 변경됩니다. 그래도 변경하시겠습니까?</p>
+            <div className="flex gap-3">
+              <Button variant="ghost" fullWidth onClick={handleCancelResetHourConfirm}>
+                취소
+              </Button>
+              <Button fullWidth onClick={handleConfirmResetHour}>
+                변경
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
