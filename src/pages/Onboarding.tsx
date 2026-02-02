@@ -83,11 +83,11 @@ export function Onboarding({ onComplete }: OnboardingProps) {
               <div className="text-sm text-gray-500 mt-1">단어/일</div>
             </div>
 
-            <input type="range" min="10" max="50" step="5" value={dailyGoal} onChange={(e) => setDailyGoal(Number(e.target.value))} className="w-full accent-black" />
+            <input type="range" min="10" max="150" step="5" value={dailyGoal} onChange={(e) => setDailyGoal(Number(e.target.value))} className="w-full accent-black" />
 
             <div className="flex justify-between text-xs text-gray-400 mt-2">
               <span>10개</span>
-              <span>50개</span>
+              <span>150개</span>
             </div>
           </div>
 

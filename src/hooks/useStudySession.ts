@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import { words } from "@/data/words";
+import { useWords } from "@/contexts/WordsContext";
 import { useUserDataContext } from "@/contexts/UserDataContext";
 import { getTodayString } from "@/lib/date";
 import { speakWord } from "@/lib/tts";
@@ -7,12 +7,13 @@ import { createShuffledIndices } from "@/lib/shuffle";
 
 /** 학습 페이지의 모든 상태와 로직을 관리하는 커스텀 훅 */
 export function useStudySession(isReviewOnlyMode: boolean) {
+  const { words } = useWords();
   const { userData, loading, recordAnswer, updateSettings, getOrCreateTodaySession, updateSessionProgress } = useUserDataContext();
 
   // 오늘 날짜 기반 셔플 순서
   const todayShuffledIndices = useMemo(() => {
     return createShuffledIndices(words.length, getTodayString());
-  }, []);
+  }, [words.length]);
 
   // 상태
   const [isFlipped, setIsFlipped] = useState(false);
@@ -33,7 +34,7 @@ export function useStudySession(isReviewOnlyMode: boolean) {
       const progress = userData.progress[String(word.id)];
       return progress && progress.status === "learning" && progress.nextReview <= today;
     });
-  }, [userData.progress]);
+  }, [words, userData.progress]);
 
   // 오늘 학습할 단어 ID (새 단어만)
   const generateWordIds = useMemo(() => {
@@ -47,7 +48,7 @@ export function useStudySession(isReviewOnlyMode: boolean) {
     );
     const shuffledNewWordIds = todayShuffledIndices.filter((idx) => newWordIds.has(words[idx].id)).map((idx) => words[idx].id);
     return shuffledNewWordIds.slice(0, userData.dailyGoal);
-  }, [userData.progress, userData.dailyGoal, todayShuffledIndices]);
+  }, [words, userData.progress, userData.dailyGoal, todayShuffledIndices]);
 
   // 오늘의 세션
   const todaySession = useMemo(() => {
@@ -75,14 +76,14 @@ export function useStudySession(isReviewOnlyMode: boolean) {
       return todaySession.wordIds.map((id) => words.find((w) => w.id === id)).filter((w): w is (typeof words)[0] => w !== undefined);
     }
     return [];
-  }, [todaySession]);
+  }, [words, todaySession]);
 
   const currentWord = studyWords[currentIndex];
 
   // 복습할 단어 (틀린 단어)
   const reviewWords = useMemo(() => {
     return sessionStats.wrongWordIds.map((id) => words.find((w) => w.id === id)).filter((w): w is (typeof words)[0] => w !== undefined);
-  }, [sessionStats.wrongWordIds]);
+  }, [words, sessionStats.wrongWordIds]);
 
   // 자동 발음 토글
   const toggleAutoSpeak = useCallback(() => {

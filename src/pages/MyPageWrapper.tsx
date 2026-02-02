@@ -194,7 +194,7 @@ export function MyPageWrapper() {
                 <div className="text-sm text-gray-500">
                   {isEditingGoal ? (
                     <div className="mt-2 flex items-center gap-3">
-                      <input type="range" min="10" max="50" step="5" value={displayDailyGoal} onChange={(e) => setEditDailyGoal(Number(e.target.value))} className="w-32 accent-black" />
+                      <input type="range" min="10" max="150" step="5" value={displayDailyGoal} onChange={(e) => setEditDailyGoal(Number(e.target.value))} className="w-32 accent-black" />
                       <span className="text-gray-900 font-medium">{displayDailyGoal}개</span>
                     </div>
                   ) : (

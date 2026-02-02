@@ -1,12 +1,13 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { TrendingUp, Flame, Target, BookOpen, CheckCircle, Clock } from "lucide-react";
-import { words } from "@/data/words";
+import { useWords } from "@/contexts/WordsContext";
 import { useUserDataContext } from "@/contexts/UserDataContext";
 import { BackHeader } from "@/components/BackHeader";
 
 export function StatsPage() {
   const navigate = useNavigate();
+  const { words } = useWords();
   const { userData, loading, getDday, getOverallProgress } = useUserDataContext();
 
   const stats = useMemo(() => {
@@ -46,7 +47,7 @@ export function StatsPage() {
       statusCounts,
       difficultyStats,
     };
-  }, [userData.progress]);
+  }, [words, userData.progress]);
 
   const overallProgress = getOverallProgress(words.length);
   const dday = getDday();

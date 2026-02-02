@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, Star, Bookmark, BookmarkCheck } from "lucide-react";
 import type { Word } from "@/types";
-import { words } from "@/data/words";
+import { useWords } from "@/contexts/WordsContext";
 import { useUserDataContext } from "@/contexts/UserDataContext";
 import { BackHeader } from "@/components/BackHeader";
 
@@ -10,6 +10,7 @@ type FilterType = "all" | "learning" | "mastered" | "bookmarked";
 
 export function VocabularyPage() {
   const navigate = useNavigate();
+  const { words } = useWords();
   const { userData, toggleBookmark } = useUserDataContext();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -33,7 +34,7 @@ export function VocabularyPage() {
 
       return matchesSearch && matchesFilter;
     });
-  }, [userData.progress, searchQuery, filter]);
+  }, [words, userData.progress, searchQuery, filter]);
 
   const getWordStatus = (wordId: number) => {
     const p = userData.progress[String(wordId)];

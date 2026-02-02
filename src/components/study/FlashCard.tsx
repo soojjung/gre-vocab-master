@@ -27,8 +27,8 @@ function CardBack({ word }: { word: Word }) {
     <>
       <div className="text-2xl font-bold text-gray-900 mb-3">{word.word}</div>
       <div className="text-xl text-gray-700 mb-5">{word.meaning}</div>
-      <div className="text-sm text-gray-500 leading-relaxed mb-2">"{word.example}"</div>
-      <div className="text-sm text-gray-400 leading-relaxed mb-4">"{word.exampleKo}"</div>
+      {word.example && <div className="text-sm text-gray-500 leading-relaxed mb-2">"{word.example}"</div>}
+      {word.exampleKo && <div className="text-sm text-gray-400 leading-relaxed mb-4">"{word.exampleKo}"</div>}
       <button onClick={handleSpeak} className="p-2 rounded-full bg-gray-200 text-gray-600 active:bg-gray-300">
         <Volume2 size={18} />
       </button>

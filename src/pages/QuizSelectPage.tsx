@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { PenLine, ListChecks, Play } from "lucide-react";
-import { words } from "@/data/words";
+import { useWords } from "@/contexts/WordsContext";
 import { useUserDataContext } from "@/contexts/UserDataContext";
 import { useQuiz } from "@/contexts/QuizContext";
 import { BackHeader } from "@/components/BackHeader";
@@ -11,6 +11,7 @@ type QuizType = "fill-blank" | "multiple-choice";
 
 export function QuizSelectPage() {
   const navigate = useNavigate();
+  const { words } = useWords();
   const { userData } = useUserDataContext();
   const { setQuizType, setQuizCount } = useQuiz();
 
@@ -21,7 +22,7 @@ export function QuizSelectPage() {
       const progress = userData.progress[String(word.id)];
       return progress && (progress.status === "learning" || progress.status === "mastered");
     });
-  }, [userData.progress]);
+  }, [words, userData.progress]);
 
   const canStart = quizWords.length >= 4;
 

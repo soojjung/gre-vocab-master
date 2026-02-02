@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { toast } from "sonner";
 import { X } from "lucide-react";
-import { words } from "@/data/words";
+import { useWords } from "@/contexts/WordsContext";
 import type { Word } from "@/types";
 import { useUserDataContext } from "@/contexts/UserDataContext";
 import { useQuiz } from "@/contexts/QuizContext";
@@ -38,6 +38,7 @@ function generateQuestions(availableWords: Word[], count: number): QuizQuestion[
 
 export function QuizPlayPage() {
   const navigate = useNavigate();
+  const { words } = useWords();
   const { userData, loading } = useUserDataContext();
   const { quizType, quizCount, setQuizResults } = useQuiz();
 
@@ -46,7 +47,7 @@ export function QuizPlayPage() {
       const progress = userData.progress[String(word.id)];
       return progress && (progress.status === "learning" || progress.status === "mastered");
     });
-  }, [userData.progress]);
+  }, [words, userData.progress]);
 
   const questions = useMemo(() => generateQuestions(quizWords, quizCount), [quizWords, quizCount]);
 

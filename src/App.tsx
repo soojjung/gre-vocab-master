@@ -3,6 +3,7 @@ import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "sonner";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { QuizProvider } from "@/contexts/QuizContext";
+import { WordsProvider } from "@/contexts/WordsContext";
 import { Login } from "@/pages/Login";
 
 // 코드 스플리팅: 로그인 후에만 로드
@@ -42,10 +43,12 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <QuizProvider>
-          <ProtectedRoutes />
-          <Toaster position="top-center" richColors />
-        </QuizProvider>
+        <WordsProvider>
+          <QuizProvider>
+            <ProtectedRoutes />
+            <Toaster position="top-center" richColors />
+          </QuizProvider>
+        </WordsProvider>
       </AuthProvider>
     </BrowserRouter>
   );
