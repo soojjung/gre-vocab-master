@@ -21,7 +21,7 @@ export function StudyHeader({ current, total, onBack }: StudyHeaderProps) {
       </div>
 
       {/* 진행률 바 */}
-      <div className="h-1 bg-gray-100 rounded-full mb-10 overflow-hidden">
+      <div className="h-1 bg-gray-100 rounded-full mb-12 overflow-hidden">
         <div className="h-full bg-black rounded-full transition-all duration-200" style={{ width: `${(current / total) * 100}%` }} />
       </div>
     </>

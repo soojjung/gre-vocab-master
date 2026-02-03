@@ -216,6 +216,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
           console.error("[Auth] Apple 토큰 교환 오류:", error);
           throw error;
         }
+
+        // 세션 확인 후 로딩 해제 (onAuthStateChange 콜백에 의존하지 않음)
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (session?.user) {
+          setUser(session.user);
+        }
+        setLoading(false);
       } else {
         // 웹: OAuth 리디렉트
         const { error } = await supabase.auth.signInWithOAuth({

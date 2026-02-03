@@ -1,10 +1,11 @@
 import { lazy, Suspense } from "react";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { QuizProvider } from "@/contexts/QuizContext";
 import { WordsProvider } from "@/contexts/WordsContext";
 import { Login } from "@/pages/Login";
+import { SupportPage } from "@/pages/SupportPage";
 
 // 코드 스플리팅: 로그인 후에만 로드
 const AuthenticatedApp = lazy(() => import("@/components/AuthenticatedApp").then((m) => ({ default: m.AuthenticatedApp })));
@@ -45,7 +46,12 @@ function App() {
       <AuthProvider>
         <WordsProvider>
           <QuizProvider>
-            <ProtectedRoutes />
+            <Routes>
+              {/* 공개 라우트 (로그인 불필요) */}
+              <Route path="/support" element={<SupportPage />} />
+              {/* 나머지 모든 경로 */}
+              <Route path="*" element={<ProtectedRoutes />} />
+            </Routes>
             <Toaster position="top-center" richColors />
           </QuizProvider>
         </WordsProvider>
