@@ -40,6 +40,16 @@ function generateNonce(length = 32): string {
   return Array.from(values, (v) => charset[v % charset.length]).join("");
 }
 
+// SHA-256 해시 (Apple에 전달할 nonce용)
+async function sha256(plain: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(plain);
+  const hash = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hash))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 // 이전에 로그인한 적 있는지 확인 (FCP 최적화)
 const getInitialLoading = () => {
   if (typeof window === "undefined") return false;
@@ -198,18 +208,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       if (isNative) {
         // iOS 네이티브: ASAuthorizationController
-        const nonce = generateNonce();
+        const rawNonce = generateNonce();
+        const hashedNonce = await sha256(rawNonce);
         const result = await SignInWithApple.authorize({
           clientId: "com.sooya.grevocab",
           redirectURI: "https://tmxnpuleiluskpifchsb.supabase.co/auth/v1/callback",
           scopes: "email name",
-          nonce,
+          nonce: hashedNonce,
         });
 
-        const { error } = await supabase.auth.signInWithIdToken({
+        const { data, error } = await supabase.auth.signInWithIdToken({
           provider: "apple",
           token: result.response.identityToken,
-          nonce,
+          nonce: rawNonce,
         });
 
         if (error) {
@@ -217,14 +228,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
           throw error;
         }
 
-        // 세션 확인 후 로딩 해제 (onAuthStateChange 콜백에 의존하지 않음)
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        if (session?.user) {
-          setUser(session.user);
+        // signInWithIdToken은 세션과 유저 정보를 직접 반환함
+        // onAuthStateChange 콜백에 의존하지 않고 즉시 상태 업데이트
+        if (data.user) {
+          setUser(data.user);
+          setLoading(false);
+        } else {
+          // 폴백: 드물지만 data.user가 없는 경우 getSession으로 확인
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+          if (session?.user) {
+            setUser(session.user);
+          }
+          setLoading(false);
         }
-        setLoading(false);
       } else {
         // 웹: OAuth 리디렉트
         const { error } = await supabase.auth.signInWithOAuth({
