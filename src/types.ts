@@ -66,6 +66,45 @@ export const getDefaultUserData = (): UserData => {
 // Spaced Repetition 간격 (일)
 export const SR_INTERVALS = [1, 2, 4, 7, 14, 30];
 
+// 커스텀 단어장
+export interface WordList {
+  id: string;
+  name: string;
+  description: string;
+  wordCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// 커스텀 단어 (DB row)
+export interface CustomWord {
+  id: string;
+  numericId: number;
+  listId: string;
+  word: string;
+  meaning: string;
+  example: string;
+  exampleKo: string;
+  difficulty: number;
+  sourceWordId: number | null;
+}
+
+// 단어 소스 타입
+export type WordSource =
+  | { type: "default" }
+  | { type: "custom"; listId: string; listName: string };
+
+// 파일 업로드 파싱 결과
+export interface ParsedWord {
+  word: string;
+  meaning: string;
+}
+
+export interface FileParseResult {
+  success: ParsedWord[];
+  errors: { line: number; content: string; reason: string }[];
+}
+
 // 퀴즈 타입
 export type QuizType = "fill-blank" | "multiple-choice";
 

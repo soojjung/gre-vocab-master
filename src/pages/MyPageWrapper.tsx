@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, BookOpen, BookMarked, LogOut, Volume2, VolumeX, FileText, Heart, Shield, HelpCircle } from "lucide-react";
+import { ChevronRight, BookOpen, BookMarked, LogOut, Volume2, VolumeX, FileText, Heart, Shield, HelpCircle, FolderPlus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserDataContext } from "@/contexts/UserDataContext";
 import { getTodayString } from "@/lib/date";
@@ -338,12 +338,22 @@ export function MyPageWrapper() {
             <ChevronRight size={20} className="text-gray-400" />
           </button>
 
-          <button onClick={() => navigate("/vocabulary")} className="w-full px-5 py-4 flex items-center justify-between active:bg-gray-50">
+          <button onClick={() => navigate("/vocabulary")} className="w-full px-5 py-4 flex items-center justify-between border-b border-gray-100 active:bg-gray-50">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
                 <BookMarked size={20} className="text-blue-600" />
               </div>
               <span className="font-medium text-gray-900">단어장</span>
+            </div>
+            <ChevronRight size={20} className="text-gray-400" />
+          </button>
+
+          <button onClick={() => navigate("/wordlists")} className="w-full px-5 py-4 flex items-center justify-between active:bg-gray-50">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                <FolderPlus size={20} className="text-purple-600" />
+              </div>
+              <span className="font-medium text-gray-900">나만의 단어장</span>
             </div>
             <ChevronRight size={20} className="text-gray-400" />
           </button>

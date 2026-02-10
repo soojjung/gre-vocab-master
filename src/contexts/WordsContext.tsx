@@ -1,16 +1,16 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useMemo, type ReactNode } from "react";
-import { useAuth } from "./AuthContext";
+import { createContext, useContext, useState, useMemo, useCallback, type ReactNode } from "react";
 import { words as defaultWords } from "@/data/words";
-import { wordsCustom } from "@/data/words-custom";
-import type { Word } from "@/types";
-
-// 커스텀 단어 데이터를 사용할 이메일 목록
-const CUSTOM_WORDS_EMAILS = ["sojjung3@gmail.com"];
+import type { Word, WordSource } from "@/types";
 
 interface WordsContextType {
   words: Word[];
+  allDefaultWords: Word[];
   isCustomData: boolean;
+  activeSource: WordSource;
+  setActiveSource: (source: WordSource) => void;
+  setCustomWords: (words: Word[]) => void;
+  resetToDefault: () => void;
 }
 
 const WordsContext = createContext<WordsContextType | null>(null);
@@ -28,19 +28,38 @@ interface WordsProviderProps {
 }
 
 export function WordsProvider({ children }: WordsProviderProps) {
-  const { user } = useAuth();
+  const [activeSource, setActiveSourceState] = useState<WordSource>({ type: "default" });
+  const [customWords, setCustomWordsState] = useState<Word[] | null>(null);
+
+  const setActiveSource = useCallback((source: WordSource) => {
+    setActiveSourceState(source);
+    if (source.type === "default") {
+      setCustomWordsState(null);
+    }
+  }, []);
+
+  const setCustomWords = useCallback((words: Word[]) => {
+    setCustomWordsState(words);
+  }, []);
+
+  const resetToDefault = useCallback(() => {
+    setActiveSourceState({ type: "default" });
+    setCustomWordsState(null);
+  }, []);
 
   const value = useMemo(() => {
-    const userEmail = user?.email?.toLowerCase();
-    const provider = user?.app_metadata?.provider;
-    // 일반 이메일 로그인(provider가 "email")이고 특정 이메일인 경우만 커스텀 데이터 사용
-    const isCustomData = provider === "email" && userEmail ? CUSTOM_WORDS_EMAILS.includes(userEmail) : false;
+    const words = activeSource.type === "custom" && customWords ? customWords : defaultWords;
 
     return {
-      words: isCustomData ? wordsCustom : defaultWords,
-      isCustomData,
+      words,
+      allDefaultWords: defaultWords,
+      isCustomData: activeSource.type === "custom",
+      activeSource,
+      setActiveSource,
+      setCustomWords,
+      resetToDefault,
     };
-  }, [user?.email, user?.app_metadata?.provider]);
+  }, [activeSource, customWords, setActiveSource, setCustomWords, resetToDefault]);
 
   return <WordsContext.Provider value={value}>{children}</WordsContext.Provider>;
 }
