@@ -117,8 +117,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const isNative = Capacitor.isNativePlatform();
     const redirectTo = isNative ? "grevocab://auth/callback" : window.location.origin;
 
-    setLoading(true);
-
     try {
       if (isNative) {
         // 네이티브 앱: OAuth URL 생성 후 외부 브라우저로 열기
@@ -143,7 +141,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
           }
         }
       } else {
-        // 웹: 기존 방식
+        // 웹: 리디렉트 플로우이므로 loading 표시
+        setLoading(true);
         const { error } = await supabase.auth.signInWithOAuth({
           provider: "google",
           options: {
@@ -163,8 +162,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signInWithKakao = async () => {
     const isNative = Capacitor.isNativePlatform();
     const redirectTo = isNative ? "grevocab://auth/callback" : window.location.origin;
-
-    setLoading(true);
 
     try {
       if (isNative) {
@@ -186,6 +183,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           }
         }
       } else {
+        setLoading(true);
         const { error } = await supabase.auth.signInWithOAuth({
           provider: "kakao",
           options: { redirectTo },
@@ -202,8 +200,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const signInWithApple = async () => {
     const isNative = Capacitor.isNativePlatform();
-
-    setLoading(true);
 
     try {
       if (isNative) {
@@ -224,27 +220,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
         });
 
         if (error) {
-          console.error("[Auth] Apple 토큰 교환 오류:", error);
+          console.error("[Auth] Apple 토큰 교환 오류:", error.message, error);
           throw error;
+        }
+
+        if (!data.user) {
+          console.error("[Auth] Apple 로그인: signInWithIdToken 성공했지만 user가 null");
+          throw new Error("Apple 로그인에 실패했습니다. 다시 시도해주세요.");
         }
 
         // signInWithIdToken은 세션과 유저 정보를 직접 반환함
         // onAuthStateChange 콜백에 의존하지 않고 즉시 상태 업데이트
-        if (data.user) {
-          setUser(data.user);
-          setLoading(false);
-        } else {
-          // 폴백: 드물지만 data.user가 없는 경우 getSession으로 확인
-          const {
-            data: { session },
-          } = await supabase.auth.getSession();
-          if (session?.user) {
-            setUser(session.user);
-          }
-          setLoading(false);
-        }
+        setUser(data.user);
+        setLoading(false);
       } else {
-        // 웹: OAuth 리디렉트
+        // 웹: 리디렉트 플로우이므로 loading 표시
+        setLoading(true);
         const { error } = await supabase.auth.signInWithOAuth({
           provider: "apple",
           options: {
@@ -286,13 +277,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const signOut = async () => {
+    // 먼저 user 상태 초기화 → ProtectedRoutes가 즉시 Login 렌더링
+    setUser(null);
+    setLoading(false);
     const { error } = await supabase.auth.signOut();
-    if (error) {
+    // AuthSessionMissingError는 이미 로그아웃된 상태이므로 무시
+    if (error && error.name !== "AuthSessionMissingError") {
       console.error("로그아웃 오류:", error);
-      throw error;
     }
-    // 로그아웃 후 홈으로 이동 (다음 로그인 시 홈에서 시작)
-    window.location.href = "/";
   };
 
   const deleteAccount = async () => {
@@ -314,9 +306,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       throw deleteError;
     }
 
-    // 3. 로그아웃 후 홈으로 이동
+    // 3. 로그아웃
+    setUser(null);
+    setLoading(false);
     await supabase.auth.signOut();
-    window.location.href = "/";
   };
 
   const value = {

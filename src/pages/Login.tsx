@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 
 // Supabase Auth 에러를 한국어로 변환
@@ -19,12 +19,22 @@ function getAuthErrorMessage(error: unknown): string {
 }
 
 export function Login() {
-  const { signInWithGoogle, signInWithApple, signInWithKakao, signInWithEmail, signUpWithEmail } = useAuth();
+  const { signInWithGoogle, signInWithApple, signInWithKakao, signInWithEmail, signUpWithEmail, loading: authLoading } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // AuthContext loading이 15초 이상 지속되면 자동 리셋 (무한 로딩 방지)
+  useEffect(() => {
+    if (!authLoading) return;
+    const timer = setTimeout(() => {
+      setError("시간이 초과되었습니다. 다시 시도해주세요.");
+      setLoading(false);
+    }, 15000);
+    return () => clearTimeout(timer);
+  }, [authLoading]);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,10 +72,13 @@ export function Login() {
     try {
       await signInWithApple();
     } catch (err: unknown) {
-      // 사용자가 취소한 경우 에러 표시하지 않음
-      const errStr = String(err);
-      if (!errStr.includes("1001") && !errStr.includes("cancel")) {
-        setError(getAuthErrorMessage(err));
+      // 사용자가 취소한 경우(에러 코드 1001) 에러 표시하지 않음
+      const errCode = (err as { code?: number })?.code;
+      if (errCode === 1001) {
+        // 사용자가 Apple 로그인 시트를 취소함 → 무시
+      } else {
+        const message = (err as { message?: string })?.message;
+        setError(message || "Apple 로그인에 실패했습니다. 다시 시도해주세요.");
       }
     } finally {
       setLoading(false);

@@ -24,6 +24,16 @@ function getDisplayName(user: ReturnType<typeof useAuth>["user"]): string {
   return user.email || "사용자";
 }
 
+// 로그인 제공자 표시 텍스트
+function getProviderLabel(user: ReturnType<typeof useAuth>["user"]): string | null {
+  if (!user) return null;
+  const provider = user.app_metadata?.provider;
+  if (provider === "apple") return "Apple 로그인";
+  if (provider === "google") return "Google 로그인";
+  if (provider === "kakao") return "카카오 로그인";
+  return null;
+}
+
 // 아바타에 표시할 첫 글자 추출
 function getAvatarInitial(user: ReturnType<typeof useAuth>["user"]): string {
   if (!user) return "U";
@@ -55,6 +65,7 @@ export function MyPageWrapper() {
 
   const displayName = getDisplayName(user);
   const avatarInitial = getAvatarInitial(user);
+  const providerLabel = getProviderLabel(user);
 
   const [isEditingDday, setIsEditingDday] = useState(false);
   const [isEditingGoal, setIsEditingGoal] = useState(false);
@@ -198,6 +209,7 @@ export function MyPageWrapper() {
             </div>
             <div>
               <div className="font-medium text-gray-900">{displayName}</div>
+              {providerLabel && <div className="text-xs text-gray-400">{providerLabel}</div>}
               <div className="text-sm text-gray-500">연속 {userData.streak}일 학습 중 🔥</div>
             </div>
           </div>
