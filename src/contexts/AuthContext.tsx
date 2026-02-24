@@ -291,15 +291,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const userId = user?.id;
     if (!userId) throw new Error("로그인 상태가 아닙니다.");
 
-    // 1. 학습 데이터 삭제
-    const { error: dataError } = await supabase.from("user_data").delete().eq("user_id", userId);
+    // 1. 단어장 데이터 삭제 (custom_words → word_lists 순서)
+    const { error: wordsError } = await supabase.from("custom_words").delete().eq("user_id", userId);
+    if (wordsError) {
+      console.error("단어 삭제 오류:", wordsError);
+      throw wordsError;
+    }
 
+    const { error: listsError } = await supabase.from("word_lists").delete().eq("user_id", userId);
+    if (listsError) {
+      console.error("단어장 삭제 오류:", listsError);
+      throw listsError;
+    }
+
+    // 2. 학습 데이터 삭제
+    const { error: dataError } = await supabase.from("user_data").delete().eq("user_id", userId);
     if (dataError) {
       console.error("데이터 삭제 오류:", dataError);
       throw dataError;
     }
 
-    // 2. 계정 삭제 (Supabase DB 함수 호출)
+    // 3. 계정 삭제 (Supabase DB 함수 호출)
     const { error: deleteError } = await supabase.rpc("delete_user");
     if (deleteError) {
       console.error("계정 삭제 오류:", deleteError);
