@@ -3,6 +3,7 @@ import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
+import { sentryVitePlugin } from "@sentry/vite-plugin";
 
 // CSS 비동기 로딩 플러그인 (FCP 개선)
 function asyncCssPlugin(): Plugin {
@@ -27,6 +28,8 @@ export default defineConfig({
     },
   },
   build: {
+    // 소스맵은 Sentry 업로드용으로만 생성. 토큰이 없으면 비활성화하여 dist 에 노출 방지.
+    sourcemap: process.env.SENTRY_AUTH_TOKEN ? "hidden" : false,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -44,6 +47,15 @@ export default defineConfig({
     react(),
     tailwindcss(),
     asyncCssPlugin(),
+    sentryVitePlugin({
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      disable: !process.env.SENTRY_AUTH_TOKEN,
+      sourcemaps: {
+        filesToDeleteAfterUpload: ["./dist/**/*.map"],
+      },
+    }),
     VitePWA({
       registerType: "autoUpdate",
       injectRegister: false, // 수동 등록 (페이지 로드 후 등록으로 FCP 개선)
