@@ -1,8 +1,8 @@
 # Sentry 에러 모니터링 설정 가이드
 
-웹 (Vite + React 19 + react-router v7) 의 런타임 에러를 추적하기 위한 Sentry 도입 가이드. iOS (Capacitor) 통합은 현재 범위 밖이며 후속 작업으로 분리.
+웹 (Vite + React 19 + react-router v7) + iOS (Capacitor) 의 런타임 에러를 통합 추적하기 위한 Sentry 도입 가이드.
 
-[공식 Sentry React SDK Skill](https://github.com/getsentry/sentry-for-ai/blob/main/skills/sentry-react-sdk/SKILL.md) 절차를 그대로 따른 결과를 기록한 문서.
+[공식 Sentry React SDK Skill](https://github.com/getsentry/sentry-for-ai/blob/main/skills/sentry-react-sdk/SKILL.md) 절차를 베이스로 시작하고, iOS 네이티브 크래시까지 잡기 위해 `@sentry/capacitor` 래퍼로 확장한 결과를 기록.
 
 ---
 
@@ -36,12 +36,13 @@
 
 ## 사용 패키지
 
-| 패키지 | 역할 |
-|------|------|
-| `@sentry/react` | React 19 통합 (`reactErrorHandler`), 브라우저 SDK |
-| `@sentry/vite-plugin` (devDep) | 빌드 시 source map 업로드. 없으면 stack trace 가 minified 라 사실상 디버깅 불가 |
+| 패키지 | 버전 | 역할 |
+|------|------|------|
+| `@sentry/capacitor` | `^3.2.1` | Capacitor 래퍼. iOS WKWebView 의 JS 에러뿐 아니라 **네이티브 크래시까지 캡처**. 웹 환경에서는 그대로 브라우저 SDK 처럼 동작 |
+| `@sentry/react` | `10.43.0` (exact) | React 19 통합 (`reactErrorHandler`), 라우트 트레이싱, replay. **`@sentry/capacitor` 의 peer 가 정확히 이 버전을 요구**하므로 임의 업그레이드 X |
+| `@sentry/vite-plugin` (devDep) | `^5.2.1` | 빌드 시 source map 업로드. 없으면 stack trace 가 minified 라 사실상 디버깅 불가 |
 
-iOS 네이티브 크래시 추적이 필요해지면 `@sentry/capacitor` 를 추후 도입 (별도 작업으로 분리).
+> **버전 핀 주의**: `@sentry/capacitor` 가 `peerOptional @sentry/react@<exact>` 을 박아두기 때문에, `@sentry/react` 는 `^` 없이 정확한 버전으로 고정되어 있음. 두 패키지를 함께 업그레이드할 때는 `npm install --save-exact @sentry/react@<X.Y.Z> --update-sentry-capacitor` 처럼 명시. 단독 업그레이드는 빌드 단계에서 `check-siblings.js` 가 막음.
 
 ---
 
@@ -71,40 +72,50 @@ import {
   useLocation,
   useNavigationType,
 } from "react-router";
-import * as Sentry from "@sentry/react";
+import * as Sentry from "@sentry/capacitor";
+import {
+  init as sentryReactInit,
+  reactRouterV7BrowserTracingIntegration,
+  replayIntegration,
+} from "@sentry/react";
 
-Sentry.init({
-  dsn: import.meta.env.VITE_SENTRY_DSN,
-  environment: import.meta.env.MODE,
+Sentry.init(
+  {
+    dsn: import.meta.env.VITE_SENTRY_DSN,
+    environment: import.meta.env.MODE,
 
-  sendDefaultPii: true,
+    sendDefaultPii: true,
 
-  integrations: [
-    Sentry.reactRouterV7BrowserTracingIntegration({
-      useEffect,
-      useLocation,
-      useNavigationType,
-      createRoutesFromChildren,
-      matchRoutes,
-    }),
-    Sentry.replayIntegration({
-      maskAllText: true,
-      blockAllMedia: true,
-    }),
-  ],
+    integrations: [
+      reactRouterV7BrowserTracingIntegration({
+        useEffect,
+        useLocation,
+        useNavigationType,
+        createRoutesFromChildren,
+        matchRoutes,
+      }),
+      replayIntegration({
+        maskAllText: true,
+        blockAllMedia: true,
+      }),
+    ],
 
-  tracesSampleRate: import.meta.env.PROD ? 0.2 : 1.0,
-  tracePropagationTargets: [
-    "localhost",
-    /^https:\/\/.*\.supabase\.co/,
-    /^https:\/\/gre-vocab-master\.vercel\.app/,
-  ],
+    tracesSampleRate: import.meta.env.PROD ? 0.2 : 1.0,
+    tracePropagationTargets: [
+      "localhost",
+      /^https:\/\/.*\.supabase\.co/,
+      /^https:\/\/gre-vocab-master\.vercel\.app/,
+    ],
 
-  replaysSessionSampleRate: 0,    // 일반 세션은 녹화 안 함 (한도 절약)
-  replaysOnErrorSampleRate: 1.0,  // 에러 시에만 녹화
-});
+    replaysSessionSampleRate: 0,    // 일반 세션은 녹화 안 함 (한도 절약)
+    replaysOnErrorSampleRate: 1.0,  // 에러 시에만 녹화
+  },
+  sentryReactInit
+);
 ```
 
+> 핵심: `Sentry.init` 의 **두 번째 인자**로 `@sentry/react` 의 `init` 함수를 전달. Capacitor SDK 가 네이티브 측 초기화 후 React SDK 의 init 을 호출해 둘을 연결함. 통합/플래그는 `@sentry/react` 에서 그대로 import.
+>
 > v7 기준이라 hooks 는 `react-router` 에서 import. v6 라면 `react-router-dom` 에서 import 하고 `reactRouterV6BrowserTracingIntegration` 사용.
 
 ### `src/main.tsx`
@@ -297,28 +308,71 @@ ignoreErrors: [
 
 ---
 
-## 후속 작업
+## iOS 네이티브 통합 절차
 
-### 1. iOS (Capacitor) 네이티브 크래시 추적
+웹 셋업 위에 iOS Capacitor 통합이 추가되었습니다. 핵심 차이만 정리.
 
-`@sentry/capacitor` 추가 시 init 함수 시그니처가 바뀜:
+### 패키지 설치
 
-```ts
-import * as Sentry from "@sentry/capacitor";
-import * as SentryReact from "@sentry/react";
+`@sentry/capacitor` 가 `@sentry/react` 의 정확한 버전을 peer 로 요구하므로 다음 순서:
 
-Sentry.init({ /* ... */ }, SentryReact.init);
+```bash
+npm install --save-exact @sentry/react@<exact> --update-sentry-capacitor
+npm install @sentry/capacitor
 ```
 
-iOS 측 dSYM 업로드를 위해 Xcode build phase 에 `sentry-cli upload-dsym` 추가가 별도로 필요. 현재 범위 밖.
+설치 시 `check-siblings.js` 가 버전 매칭을 검증하여 불일치하면 빌드 실패.
 
-### 2. 알람 채널 다양화
+### init 시그니처
+
+`Sentry.init` 의 두 번째 인자로 `@sentry/react` 의 `init` 함수 전달. (앞의 [`src/instrument.ts` 섹션](#srcinstrumentts) 참조)
+
+### Capacitor sync
+
+```bash
+npx cap sync ios
+```
+
+→ iOS 측 CocoaPods 가 `@sentry/capacitor` 를 native plugin 으로 등록. `npx cap sync ios` 출력에 `@sentry/capacitor@x.y.z` 가 보이면 정상.
+
+### 동작 범위
+
+| 환경 | 잡히는 에러 |
+|---|---|
+| 웹 (Vercel) | JS 에러, Promise rejection, fetch 실패, React 렌더 에러, 라우트 트랜잭션 |
+| iOS 앱 (WebView 안) | 위 항목 모두 + **Swift/Objective-C 네이티브 크래시** |
+
+### dSYM 업로드 (선택, 후속 작업)
+
+네이티브 크래시 stack trace 가 메모리 주소 (예: `0x1024a8b40`) 로 표시되는 걸 함수명/라인 으로 풀려면 dSYM 파일을 Sentry 에 업로드해야 함.
+
+방법 (참고용 — 현재 미적용):
+1. Xcode 프로젝트 → App target → Build Phases → New Run Script Phase
+2. 스크립트:
+   ```bash
+   if [[ -n "$SENTRY_AUTH_TOKEN" ]]; then
+     /usr/local/bin/sentry-cli upload-dif --org sooya --project gre-vocab-master "$DWARF_DSYM_FOLDER_PATH"
+   fi
+   ```
+3. Xcode 의 환경변수 또는 CI 에 `SENTRY_AUTH_TOKEN` 주입
+
+dSYM 업로드 안 하면 → JS 에러는 그대로 잡히지만 네이티브 크래시는 unsymbolicated. iOS 네이티브 코드를 거의 안 쓰는 Capacitor 앱 특성상 우선순위 낮음.
+
+---
+
+## 추가 후속 작업
+
+### 알람 채널 다양화
 
 이메일 외 Slack / Discord 연동 — Sentry → Settings → Integrations.
 
-### 3. Release 자동 commit 연동
+### Release 자동 commit 연동
 
 `sentry-cli releases set-commits` 또는 vite-plugin 의 `release.setCommits.auto` 옵션으로, 어느 commit 이 어떤 에러를 도입했는지 자동 매핑 가능.
+
+### 사용자 식별
+
+위 [운영 팁 → 사용자 식별](#사용자-식별-선택) 의 `Sentry.setUser({ id })` 패턴을 `AuthContext` 에 추가하면 어느 사용자에게서 발생한 에러인지 추적 가능.
 
 ---
 

@@ -8,6 +8,12 @@ PODS:
   - CapacitorCommunityAppleSignIn (7.1.0):
     - Capacitor
   - CapacitorCordova (8.0.1)
+  - Sentry (9.8.0):
+    - Sentry/Core (= 9.8.0)
+  - Sentry/Core (9.8.0)
+  - SentryCapacitor (3.2.1):
+    - Capacitor
+    - Sentry (= 9.8.0)
 
 DEPENDENCIES:
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
@@ -15,6 +21,11 @@ DEPENDENCIES:
   - "CapacitorBrowser (from `../../node_modules/@capacitor/browser`)"
   - "CapacitorCommunityAppleSignIn (from `../../node_modules/@capacitor-community/apple-sign-in`)"
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
+  - "SentryCapacitor (from `../../node_modules/@sentry/capacitor`)"
+
+SPEC REPOS:
+  trunk:
+    - Sentry
 
 EXTERNAL SOURCES:
   Capacitor:
@@ -27,6 +38,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor-community/apple-sign-in"
   CapacitorCordova:
     :path: "../../node_modules/@capacitor/ios"
+  SentryCapacitor:
+    :path: "../../node_modules/@sentry/capacitor"
 
 SPEC CHECKSUMS:
   Capacitor: ff35b0f66370b84aa238251b35b91886a3207c16
@@ -34,7 +47,9 @@ SPEC CHECKSUMS:
   CapacitorBrowser: b7d7f05f840fe042e46f6528bb8db853e3058fb2
   CapacitorCommunityAppleSignIn: 271cb2860576fd2961508bbfa7a82117d93eadca
   CapacitorCordova: 0d65b9bb74e995dcecb9463f34f1af2aba6f955c
+  Sentry: 88746bf877eff714bc45315a39ad1d1efea2cdda
+  SentryCapacitor: 179536d84866b2ffde1ecd8ed1ded541caf3e950
 
-PODFILE CHECKSUM: 84ceaab648e0975b6701729eab1de012a4955e8c
+PODFILE CHECKSUM: dea7c6e9fdd8fa5d10eb605dd3fcff85f82bb757
 
 COCOAPODS: 1.16.2
