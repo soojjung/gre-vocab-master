@@ -16,7 +16,7 @@ export function PrivacyPolicyPage() {
         </div>
       </header>
 
-      <article className="max-w-2xl mx-auto px-5 pt-[calc(4.5rem+env(safe-area-inset-top,0px))] pb-12 text-gray-800 leading-relaxed">
+      <article className="max-w-2xl mx-auto px-5 pt-[calc(4.5rem+env(safe-area-inset-top,0px))] pb-[calc(3rem+env(safe-area-inset-bottom,0px))] text-gray-800 leading-relaxed">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">개인정보처리방침</h2>
         <p className="text-sm text-gray-500 mb-6">시행일: 2026년 1월 27일</p>
 

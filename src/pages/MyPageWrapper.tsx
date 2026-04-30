@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ChevronRight, BookOpen, BookMarked, LogOut, Volume2, VolumeX, FileText, Heart, Shield, HelpCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserDataContext } from "@/contexts/UserDataContext";
-import { getTodayString } from "@/lib/date";
+import { getTodayString, formatDday } from "@/lib/date";
 import { BackHeader } from "@/components/BackHeader";
 import { Button } from "@/components/common";
 
@@ -230,7 +230,9 @@ export function MyPageWrapper() {
                   {isEditingDday ? (
                     <input type="date" value={displayTargetDate} onChange={(e) => setEditTargetDate(e.target.value)} min={getTodayString()} className="mt-2 bg-gray-100 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-black" />
                   ) : (
-                    `D-${getDday()} (${userData.targetDate})`
+                    <>
+                      {formatDday(getDday())} ({userData.targetDate}){getDday() < 0 && <div className="mt-1 text-xs text-amber-600">시험일이 지났어요. 목표일을 갱신해보세요!</div>}
+                    </>
                   )}
                 </div>
               </div>

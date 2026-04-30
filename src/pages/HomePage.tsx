@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { User, BadgeQuestionMark, BookOpen, BookMarked, Flame, BarChart3 } from "lucide-react";
 import { useUserDataContext } from "@/contexts/UserDataContext";
+import { formatDday } from "@/lib/date";
 import { Button } from "@/components/common";
 
 export function HomePage() {
@@ -42,7 +43,8 @@ export function HomePage() {
         {/* D-day 카드 */}
         <div className="bg-black text-white rounded-2xl p-6 mb-6">
           <div className="text-sm text-gray-400 mb-1">목표 시험일까지</div>
-          <div className="text-4xl font-bold">{dday > 0 ? `D-${dday}` : dday === 0 ? "D-Day" : `D+${Math.abs(dday)}`}</div>
+          <div className="text-4xl font-bold">{formatDday(dday)}</div>
+          {dday < 0 && <div className="mt-2 text-sm text-gray-300">시험일이 지났어요. 목표일을 갱신해보세요!</div>}
           {userData.streak > 0 && (
             <div className="mt-3 text-sm text-gray-300 flex items-center gap-1">
               <Flame size={14} className="text-orange-400" />

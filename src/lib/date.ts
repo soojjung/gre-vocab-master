@@ -64,3 +64,15 @@ export function getYesterdayStringWithResetHour(resetHour: number): string {
   todayDate.setDate(todayDate.getDate() - 1);
   return getLocalDateString(todayDate);
 }
+
+/**
+ * D-day 숫자를 사용자에게 보여줄 문자열로 포맷
+ * 양수: D-N (시험일까지 N일 남음)
+ * 0: D-Day
+ * 음수: D+N (시험일이 N일 지남)
+ */
+export function formatDday(days: number): string {
+  if (days > 0) return `D-${days}`;
+  if (days === 0) return "D-Day";
+  return `D+${Math.abs(days)}`;
+}
