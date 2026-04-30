@@ -1,6 +1,6 @@
 # 데이터베이스 스키마
 
-> Supabase (PostgreSQL) 기반. 최종 업데이트: 2026-02-24
+> Supabase (PostgreSQL) 기반. 최종 업데이트: 2026-04-30
 
 ---
 
@@ -25,11 +25,15 @@
 - **progress**: 단어별 학습 상태 (`status`, `correctCount`, `wrongCount`, `nextReview`, `interval`, `bookmarked`)
 - **today_session**: 오늘의 학습 세션 (`date`, `wordIds`, `currentIndex`, `completed`)
 
-### word_lists (1:N)
+### word_lists (1:N) — ⚠️ 현재 코드 미사용
+
+> 2026-04-30 "나만의 단어장" 기능 제거(`535d277`)로 앱 코드에서 더 이상 참조되지 않음. 향후 재도입 가능성을 위해 테이블과 데이터는 보존. 신규 INSERT 는 발생하지 않으며, `AuthContext.deleteAccount()` 의 정리 로직만 잔존 (옛 데이터 안전망).
 
 사용자가 만드는 커스텀 단어장 메타데이터. `word_count`로 단어 수를 캐싱.
 
-### custom_words (N:1 → word_lists)
+### custom_words (N:1 → word_lists) — ⚠️ 현재 코드 미사용
+
+> word_lists 와 동일 사유로 미사용. 데이터/스키마는 보존.
 
 단어장에 속한 개별 단어. `numeric_id`(10000~)는 기본 GRE 단어 ID와 충돌하지 않도록 시퀀스로 생성. `source_word_id`는 기본 단어에서 복사한 경우 원본 ID를 참조.
 
@@ -65,19 +69,21 @@
 코드 명시 삭제 + DB CASCADE 이중 안전망. (`AuthContext.deleteAccount()`)
 
 ```
-1. custom_words 삭제  (FK 의존성 때문에 먼저)
-2. word_lists 삭제
+1. custom_words 삭제  (FK 의존성 때문에 먼저, 잔존 데이터 정리용)
+2. word_lists 삭제   (1과 동일)
 3. user_data 삭제
 4. rpc("delete_user") → auth.users 삭제
    └── CASCADE로 잔여 데이터 자동 정리 (안전망)
 5. 로그아웃
 ```
 
+> 1, 2 단계는 "나만의 단어장" 기능이 제거된 현재 시점에는 옛 사용자 데이터 정리용으로만 의미를 가짐. 신규 사용자에게는 두 테이블에 데이터가 생성될 일이 없음.
+
 ---
 
 ## TypeScript 타입 매핑
 
-DB snake_case ↔ 프론트 camelCase 변환: `useUserData.ts`, `useWordLists.ts`
+DB snake_case ↔ 프론트 camelCase 변환: `useUserData.ts`
 
 | DB 컬럼 | TS 필드 | 타입 |
 |---------|---------|------|
@@ -88,10 +94,5 @@ DB snake_case ↔ 프론트 camelCase 변환: `useUserData.ts`, `useWordLists.ts
 | `user_data.onboarding_complete` | `UserData.onboardingComplete` | boolean |
 | `user_data.auto_speak` | `UserData.autoSpeak` | boolean |
 | `user_data.today_session` | `UserData.todaySession` | TodaySession |
-| `custom_words.numeric_id` | `CustomWord.numericId` | number |
-| `custom_words.list_id` | `CustomWord.listId` | string |
-| `custom_words.example_ko` | `CustomWord.exampleKo` | string |
-| `custom_words.source_word_id` | `CustomWord.sourceWordId` | number \| null |
-| `word_lists.word_count` | `WordList.wordCount` | number |
-| `word_lists.created_at` | `WordList.createdAt` | string |
-| `word_lists.updated_at` | `WordList.updatedAt` | string |
+
+> `word_lists` / `custom_words` 의 TS 타입(`WordList`, `CustomWord`)은 기능 제거와 함께 `types.ts` 에서 삭제됨. 향후 재도입 시 재정의 필요.
