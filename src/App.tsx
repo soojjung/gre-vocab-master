@@ -6,6 +6,7 @@ import { QuizProvider } from "@/contexts/QuizContext";
 import { WordsProvider } from "@/contexts/WordsContext";
 import { Login } from "@/pages/Login";
 import { SupportPage } from "@/pages/SupportPage";
+import { PrivacyPolicyPage } from "@/pages/PrivacyPolicyPage";
 
 // 코드 스플리팅: 로그인 후에만 로드
 const AuthenticatedApp = lazy(() => import("@/components/AuthenticatedApp").then((m) => ({ default: m.AuthenticatedApp })));
@@ -49,6 +50,7 @@ function App() {
             <Routes>
               {/* 공개 라우트 (로그인 불필요) */}
               <Route path="/support" element={<SupportPage />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
               {/* 나머지 모든 경로 */}
               <Route path="*" element={<ProtectedRoutes />} />
             </Routes>
