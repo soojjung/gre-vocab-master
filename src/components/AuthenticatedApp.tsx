@@ -1,7 +1,6 @@
 import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { UserDataProvider, useUserDataContext } from "@/contexts/UserDataContext";
-import { WordListProvider } from "@/contexts/WordListContext";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { Onboarding } from "@/pages/Onboarding";
 import { HomePage } from "@/pages/HomePage";
@@ -17,8 +16,6 @@ const StatsPage = lazy(() => import("@/pages/StatsPage").then((m) => ({ default:
 const LicensePage = lazy(() => import("@/pages/LicensePage").then((m) => ({ default: m.LicensePage })));
 const AboutPage = lazy(() => import("@/pages/AboutPage").then((m) => ({ default: m.AboutPage })));
 const ContactPage = lazy(() => import("@/pages/ContactPage").then((m) => ({ default: m.ContactPage })));
-const WordListsPage = lazy(() => import("@/pages/WordListsPage").then((m) => ({ default: m.WordListsPage })));
-const WordListDetailPage = lazy(() => import("@/pages/WordListDetailPage").then((m) => ({ default: m.WordListDetailPage })));
 
 function PageLoader() {
   return (
@@ -67,8 +64,6 @@ function AuthenticatedAppContent() {
           <Route path="/quiz/play" element={<QuizPlayPage />} />
           <Route path="/quiz/result" element={<QuizResultPage />} />
           <Route path="/stats" element={<StatsPage />} />
-          <Route path="/wordlists" element={<WordListsPage />} />
-          <Route path="/wordlists/:id" element={<WordListDetailPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
@@ -79,9 +74,7 @@ function AuthenticatedAppContent() {
 export function AuthenticatedApp({ userId }: AuthenticatedAppProps) {
   return (
     <UserDataProvider userId={userId}>
-      <WordListProvider>
-        <AuthenticatedAppContent />
-      </WordListProvider>
+      <AuthenticatedAppContent />
     </UserDataProvider>
   );
 }
