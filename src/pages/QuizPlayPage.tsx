@@ -6,6 +6,7 @@ import { useWords } from "@/contexts/WordsContext";
 import type { Word } from "@/types";
 import { useUserDataContext } from "@/contexts/UserDataContext";
 import { useQuiz } from "@/contexts/QuizContext";
+import { getBlankSentence } from "@/lib/blankSentence";
 
 interface QuizQuestion {
   word: Word;
@@ -131,11 +132,6 @@ export function QuizPlayPage() {
 
   const currentQuestion = questions[currentIndex];
   const progress = ((currentIndex + 1) / questions.length) * 100;
-
-  const getBlankSentence = (example: string, word: string) => {
-    const regex = new RegExp(`\\b${word}\\b`, "gi");
-    return example.replace(regex, "_____");
-  };
 
   const getOptionStyle = (index: number) => {
     if (!showResult) return "bg-gray-50 border-gray-200 text-gray-900";
