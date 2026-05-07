@@ -6,6 +6,21 @@
 
 ---
 
+## 2026-05-07 — 빈칸 채우기 퀴즈에서 정답 단어가 변형 형태로 등장 시 빈칸이 만들어지지 않음
+
+| 항목 | 내용 |
+|---|---|
+| **발견 경로** | 사용자 이메일 제보 (iPhone 15, iOS 26.4.2). 스크린샷 첨부 — 12/50 문제 "The graphic images **harrowed** the viewers." 가 빈칸 처리 없이 노출됐고 보기 D번이 `harrow` 였음 |
+| **영향** | iOS 1.0 ~ 1.3 전 버전. 빈칸 채우기 퀴즈에서 정답 단어가 예문에 인플렉션 형태(과거형 -ed, 진행형 -ing, 복수 -s, y→ied 등)로 등장하면 빈칸이 생성되지 않고 정답이 그대로 노출 → 객관식 정답이 사실상 자동 공개되는 형태로 학습 효과 무력화. 전체 1,560개 quiz 단어 중 **319건(20.5%)** 이 영향 범위 |
+| **원인** | `src/pages/QuizPlayPage.tsx` 의 `getBlankSentence` 가 `new RegExp('\\b${word}\\b', 'gi')` — 정확한 단어 경계만 매칭. 정답 `harrow` 에 대한 정규식 `\bharrow\b` 는 `harrowed` 뒤의 `ed` 가 단어 일부라서 매칭 실패. 영어 인플렉션 가능성을 고려하지 않은 설계 |
+| **해결** | 헬퍼를 `src/lib/blankSentence.ts` 로 분리하고 인플렉션 4종 지원 정규식으로 교체:<br>- 기본 접미사: `s, es, ed, ing, d, er, est, ly, ier, iest, ation, al, ally, ically`<br>- y → i 변형: `fortify → fortified/fortifies`<br>- e 탈락: `gouge → gouging`<br>- 자음 중첩: `aver → averred`, `log → logged`<br>1,560건 전수 시뮬레이션 결과 **1,558건 매칭(99.9%)**. 남은 2건은 약어(`e.g.`)와 불규칙 과거형(`rend→rent`) — 무시 |
+| **후속 조치** | - 1.4 빌드로 배포 예정 (현재 워킹트리만 변경)<br>- Sentry 통합 완료 상태라 동일 패턴 재발 시 알람 가능 (단, 이 버그는 예외 발생이 아니라 "빈칸이 안 생김" 형태라 Sentry 가 잡지 못함 — 사용자 제보에 의존)<br>- 단위 테스트 환경(vitest) 미도입 — 데이터 추가 시 동일 회귀 가능. 도입 검토 필요<br>- 데이터 추가 시 인플렉션 매칭 검증 스크립트를 CI 또는 로컬 hook 으로 자동화 검토 |
+| **교훈** | - **자연어 데이터에서 exact match 가정은 위험**. 영어는 형태소 변형이 흔하므로 단어→예문 매칭 시 인플렉션 가능성 항상 고려<br>- 충분한 데이터셋(1,560건)이 있으면 패치 전 **시뮬레이션으로 영향 범위 정량화 가능** — 이번엔 패치 적용 전 80% 매칭률을 확인했고, 패치 후 99.9% 로 개선 검증<br>- "예외가 안 나는 silent bug" 는 Sentry 같은 에러 모니터링으로 잡히지 않음. 사용자 제보 채널(이메일/리뷰)이 유일한 인지 경로라는 점 인식 |
+
+관련 커밋: 워킹트리 변경 (`src/lib/blankSentence.ts`, `src/pages/QuizPlayPage.tsx`) — 미커밋
+
+---
+
 ## 2026-04-30 — iOS 앱에서 "개인정보처리방침" 페이지 이동 안 됨
 
 | 항목 | 내용 |
@@ -46,6 +61,8 @@
 - [ ] [Sentry Alerts 룰](https://sooya.sentry.io/alerts/rules/) 정상 동작 (이메일 도착 테스트)
 - [ ] App Store 앱 리뷰 댓글 확인 (운영 이슈 보고 채널)
 - [ ] iOS Capacitor 앱: `window.open` / `_blank` 패턴 사용처 점검 (in-app 흐름은 SPA 라우팅으로)
+- [ ] 새 단어 데이터 추가 시 빈칸 인플렉션 매칭 검증 (`src/lib/blankSentence.ts` 로 전수 시뮬레이션)
+- [ ] silent bug (예외 미발생, Sentry 감지 불가) 채널 점검: 사용자 제보 이메일 / App Store 리뷰 댓글 정기 확인
 
 ---
 
