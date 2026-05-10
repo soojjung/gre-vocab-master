@@ -18,7 +18,8 @@ function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array];
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    // i, j 는 shuffled.length 범위 내이므로 항상 정의됨.
+    [shuffled[i], shuffled[j]] = [shuffled[j]!, shuffled[i]!];
   }
   return shuffled;
 }
@@ -131,6 +132,10 @@ export function QuizPlayPage() {
   }
 
   const currentQuestion = questions[currentIndex];
+  if (!currentQuestion) {
+    // 인덱스가 범위를 벗어난 경우 (정상적으로는 발생 안 함) — 퀴즈 선택 화면으로 복귀.
+    return <Navigate to="/quiz" replace />;
+  }
   const progress = ((currentIndex + 1) / questions.length) * 100;
 
   const getOptionStyle = (index: number) => {

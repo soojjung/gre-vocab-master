@@ -17,9 +17,11 @@ const buildBlankRegex = (word: string): RegExp => {
     );
   }
 
-  const last = word[word.length - 1];
-  if (word.length >= 2 && /[bcdfghjklmnpqrstvwxz]/i.test(last)) {
-    variants.push(escaped + escapeRegex(last) + "(?:ed|ing|er|est)");
+  if (word.length >= 2) {
+    const last = word[word.length - 1];
+    if (last && /[bcdfghjklmnpqrstvwxz]/i.test(last)) {
+      variants.push(escaped + escapeRegex(last) + "(?:ed|ing|er|est)");
+    }
   }
 
   return new RegExp(`\\b(?:${variants.join("|")})\\b`, "gi");

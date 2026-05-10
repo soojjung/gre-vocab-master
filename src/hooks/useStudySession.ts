@@ -4,6 +4,7 @@ import { useUserDataContext } from "@/contexts/UserDataContext";
 import { getTodayStringWithResetHour } from "@/lib/date";
 import { speakWord } from "@/lib/tts";
 import { createShuffledIndices } from "@/lib/shuffle";
+import type { Word } from "@/types";
 
 /** 학습 페이지의 모든 상태와 로직을 관리하는 커스텀 훅 */
 export function useStudySession(isReviewOnlyMode: boolean) {
@@ -27,14 +28,32 @@ export function useStudySession(isReviewOnlyMode: boolean) {
   const [srReviewIndex, setSrReviewIndex] = useState(0);
   const [srReviewComplete, setSrReviewComplete] = useState(false);
 
-  // SR 복습 대상 단어
-  const srReviewWords = useMemo(() => {
+  // SR 복습 대상 단어 (라이브 — userData.progress 변화에 따라 재계산)
+  const srReviewWordsLive = useMemo(() => {
     const today = getTodayStringWithResetHour(userData.resetHour);
     return words.filter((word) => {
       const progress = userData.progress[String(word.id)];
       return progress && progress.status === "learning" && progress.nextReview <= today;
     });
   }, [words, userData.resetHour, userData.progress]);
+
+  // 세션 진입 시점에 한 번만 snapshot — 답변으로 progress가 바뀌어도 목록 길이가 변하지 않게 고정.
+  // 라이브 목록을 그대로 쓰면 답변 직후 nextReview가 미래로 밀려 단어가 빠지면서
+  // srReviewIndex가 범위를 벗어나 FlashCard에 undefined가 전달돼 TypeError가 발생함.
+  // React 권장 패턴: prop 변화에 맞춰 render 중 setState 로 즉시 재렌더 트리거.
+  // (effect 사용 시 cascading render 발생 + ESLint react-hooks/set-state-in-effect 위반)
+  const [srSessionWords, setSrSessionWords] = useState<Word[] | null>(null);
+  const [prevIsReviewOnlyMode, setPrevIsReviewOnlyMode] = useState(isReviewOnlyMode);
+
+  if (prevIsReviewOnlyMode !== isReviewOnlyMode) {
+    setPrevIsReviewOnlyMode(isReviewOnlyMode);
+    setSrSessionWords(null);
+  } else if (isReviewOnlyMode && srSessionWords === null && srReviewWordsLive.length > 0) {
+    // 진입 시 라이브 목록이 비어 있다가(로딩 중) 채워진 경우에도 한 번 snapshot.
+    setSrSessionWords(srReviewWordsLive);
+  }
+
+  const srReviewWords = srSessionWords ?? srReviewWordsLive;
 
   // 오늘 학습할 단어 ID (새 단어만)
   const generateWordIds = useMemo(() => {
@@ -46,7 +65,10 @@ export function useStudySession(isReviewOnlyMode: boolean) {
         })
         .map((w) => w.id)
     );
-    const shuffledNewWordIds = todayShuffledIndices.filter((idx) => newWordIds.has(words[idx].id)).map((idx) => words[idx].id);
+    const shuffledNewWordIds = todayShuffledIndices
+      .map((idx) => words[idx])
+      .filter((w): w is Word => w !== undefined && newWordIds.has(w.id))
+      .map((w) => w.id);
     return shuffledNewWordIds.slice(0, userData.dailyGoal);
   }, [words, userData.progress, userData.dailyGoal, todayShuffledIndices]);
 

@@ -6,6 +6,21 @@
 
 ---
 
+## 2026-05-10 — SR 복습 모드 마지막 단어 답변 직후 TypeError (`undefined is not an object (evaluating 'n.word')`)
+
+| 항목 | 내용 |
+|---|---|
+| **발견 경로** | Sentry Weekly Update 이메일 (2026-05-02 ~ 05-09 기간, 신규 이슈 1건 / 에러 3건). 메시지 `undefined is not an object (evaluating 'n.word')` (n 은 minified 변수) |
+| **영향** | iOS 1.0 ~ 1.4 + 웹 전 버전. SR 복습 전용 모드(`/study?mode=review`)에서 단어를 답변하면 해당 단어의 `progress.nextReview` 가 미래로 push 되어 라이브 복습 목록에서 즉시 빠짐 → 다음 단어로 인덱스를 증가시킨 후 재렌더 시 `srReviewWords[srReviewIndex]` 가 undefined → `<FlashCard word={undefined} />` → `word.word` 접근에서 TypeError. 한 세션에 2개 이상 단어가 있는 경우 첫 답변 직후 무조건 재현 |
+| **원인** | `src/hooks/useStudySession.ts` 의 `srReviewWords` 가 `userData.progress` 의존 `useMemo` 라서 답변마다 재계산 됨. `recordAnswer` 호출 → progress 업데이트 → 메모 재계산 → 길이 축소 → 인덱스 stale. 그런데 `handleSrReviewNext` 의 분기는 stale closure 의 길이 기준으로 `setSrReviewIndex(prev+1)` 를 호출하므로 새 길이 기준에서 인덱스가 범위를 벗어남 |
+| **해결** | 세션 진입 시점의 라이브 목록을 한 번만 snapshot 해서 `srSessionWords` state 에 고정 (`useStudySession.ts:45-56`). React 권장 패턴(["Adjusting state when a prop changes"](https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes))에 따라 `prevIsReviewOnlyMode` 추적 state 와 함께 render 중 setState 로 처리. `useEffect` 안에서 setState 하는 형태는 ESLint `react-hooks/set-state-in-effect` 에 막히고 cascading render 가 발생하므로 채택 불가 |
+| **후속 조치** | - 코드 수정 미커밋 상태 → 커밋 후 웹 배포 + iOS 1.5 빌드 제출 필요<br>- Sentry 통합 효용 입증된 케이스 (이전 Supabase paused 50일 인지 지연 → 이번엔 주간 리포트로 7일 내 인지)<br>- 동일 패턴(라이브 메모가 답변 사이드 이펙트로 변하는 구조)이 다른 곳에 없는지 점검 — 일반 학습/퀴즈/오답 복습은 `todaySession.wordIds` 기반이라 안전 |
+| **교훈** | - **답변 sideeffect 가 의존성에 들어가는 useMemo 는 휘발성 목록**. 인덱싱 기반 UI 가 그 위에 올라가면 인덱스 OOB 가 거의 필연 — 세션 단위로 snapshot 필요<br>- **Sentry 주간 리포트 기반 운영은 7일 단위 인지 지연을 감수하는 셈**. 더 빨리 잡고 싶다면 "신규 이슈 발생 즉시 이메일" 알람 룰이 별도 활성화돼 있는지 점검해야 함 (현 상태 미확인)<br>- React 의 derived state 는 effect 가 아니라 render 중 setState 가 권장 — `react-hooks/set-state-in-effect` lint 룰이 안전망 역할 |
+
+관련 파일: `src/hooks/useStudySession.ts:45-56`
+
+---
+
 ## 2026-05-07 — 빈칸 채우기 퀴즈에서 정답 단어가 변형 형태로 등장 시 빈칸이 만들어지지 않음
 
 | 항목 | 내용 |

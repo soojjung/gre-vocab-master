@@ -78,6 +78,10 @@ export function StudyPage() {
     }
 
     const currentSrWord = srReviewWords[srReviewIndex];
+    if (!currentSrWord) {
+      // 인덱스 OOB 방어 (snapshot 으로 막혀 있지만 noUncheckedIndexedAccess 만족용).
+      return null;
+    }
     return (
       <div className="min-h-dvh bg-white px-5 pb-8 flex flex-col pt-[max(2rem,env(safe-area-inset-top))]">
         <StudyHeader current={srReviewIndex + 1} total={srReviewWords.length} onBack={() => navigate("/")} />
@@ -104,6 +108,7 @@ export function StudyPage() {
   // 복습 모드 (틀린 단어)
   if (reviewMode && reviewWords.length > 0) {
     const reviewWord = reviewWords[reviewIndex];
+    if (!reviewWord) return null;
     return (
       <div className="min-h-dvh bg-white px-5 pb-8 flex flex-col pt-[max(2rem,env(safe-area-inset-top))]">
         <StudyHeader current={reviewIndex + 1} total={reviewWords.length} onBack={exitReviewMode} />
@@ -117,6 +122,7 @@ export function StudyPage() {
   // 퀴즈 모드
   if (quizMode && studyWords.length > 0) {
     const quizWord = studyWords[quizIndex];
+    if (!quizWord) return null;
     return (
       <div className="min-h-dvh bg-white px-5 pb-8 flex flex-col pt-[max(2rem,env(safe-area-inset-top))]">
         <StudyHeader current={quizIndex + 1} total={studyWords.length} onBack={exitQuizMode} />

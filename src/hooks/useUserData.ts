@@ -160,14 +160,14 @@ export function useUserData(userId?: string | null) {
         if (correct) {
           const currentIdx = SR_INTERVALS.indexOf(progress.interval);
           const nextIdx = Math.min(currentIdx + 1, SR_INTERVALS.length - 1);
-          newInterval = SR_INTERVALS[nextIdx];
+          newInterval = SR_INTERVALS[nextIdx] ?? 1;
           if (progress.correctCount >= 3 && newInterval >= 7) {
             newStatus = "mastered";
           } else {
             newStatus = "learning";
           }
         } else {
-          newInterval = SR_INTERVALS[0];
+          newInterval = SR_INTERVALS[0] ?? 1;
           newStatus = "learning";
         }
 

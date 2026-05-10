@@ -36,7 +36,8 @@ export function createShuffledIndices(length: number, dateString?: string): numb
 
   for (let i = indices.length - 1; i > 0; i--) {
     const j = Math.floor(random() * (i + 1));
-    [indices[i], indices[j]] = [indices[j], indices[i]];
+    // i, j 는 indices.length 범위 내이므로 항상 정의됨 — noUncheckedIndexedAccess 만족용 단언.
+    [indices[i], indices[j]] = [indices[j]!, indices[i]!];
   }
   return indices;
 }
