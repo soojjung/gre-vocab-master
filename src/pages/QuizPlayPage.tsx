@@ -7,7 +7,8 @@ import type { Word } from "@/types";
 import { useUserDataContext } from "@/contexts/UserDataContext";
 import { useQuiz } from "@/contexts/QuizContext";
 import { getBlankSentence } from "@/lib/blankSentence";
-import { useT } from "@/i18n";
+import { useT, useLanguage } from "@/i18n";
+import { getMeaning, shouldShowExampleKo } from "@/lib/wordDisplay";
 
 interface QuizQuestion {
   word: Word;
@@ -42,6 +43,7 @@ function generateQuestions(availableWords: Word[], count: number): QuizQuestion[
 export function QuizPlayPage() {
   const navigate = useNavigate();
   const t = useT();
+  const { lang } = useLanguage();
   const { words } = useWords();
   const { userData, loading } = useUserDataContext();
   const { quizType, quizCount, setQuizResults } = useQuiz();
@@ -171,12 +173,12 @@ export function QuizPlayPage() {
           <div>
             <div className="text-sm text-gray-500 mb-2">{t("quiz.fillBlankPrompt")}</div>
             <div className="text-lg text-gray-900 leading-relaxed mb-2">{getBlankSentence(currentQuestion.word.example, currentQuestion.word.word)}</div>
-            <div className="text-sm text-gray-500 mb-8">{currentQuestion.word.exampleKo}</div>
+            {shouldShowExampleKo(lang) && <div className="text-sm text-gray-500 mb-8">{currentQuestion.word.exampleKo}</div>}
           </div>
         ) : (
           <div>
             <div className="text-sm text-gray-500 mb-2">{t("quiz.multipleChoicePrompt")}</div>
-            <div className="text-xl font-medium text-gray-900 mb-8">{currentQuestion.word.meaning}</div>
+            <div className="text-xl font-medium text-gray-900 mb-8">{getMeaning(currentQuestion.word, lang)}</div>
           </div>
         )}
 

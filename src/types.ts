@@ -3,6 +3,7 @@ export interface Word {
   id: number;
   word: string;
   meaning: string;
+  meaningEn?: string; // 영어 정의(GRE 영영 사전 기반). 없으면 영어 모드에서도 meaning(한국어) 으로 fallback.
   example: string;
   exampleKo: string;
   difficulty: number;

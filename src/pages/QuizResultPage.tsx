@@ -2,12 +2,14 @@ import { useNavigate, Navigate } from "react-router-dom";
 import { RotateCcw, Home, XCircle } from "lucide-react";
 import { useQuiz } from "@/contexts/QuizContext";
 import { Button } from "@/components/common";
-import { useT } from "@/i18n";
+import { useT, useLanguage } from "@/i18n";
 import type { TranslationKey } from "@/i18n";
+import { getMeaning } from "@/lib/wordDisplay";
 
 export function QuizResultPage() {
   const navigate = useNavigate();
   const t = useT();
+  const { lang } = useLanguage();
   const { quizType, quizResults } = useQuiz();
 
   // 결과가 없으면 선택 페이지로 리다이렉트
@@ -63,7 +65,7 @@ export function QuizResultPage() {
                   <div className="flex justify-between items-start">
                     <div>
                       <div className="font-medium text-gray-900">{result.word.word}</div>
-                      <div className="text-sm text-gray-600 mt-1">{result.word.meaning}</div>
+                      <div className="text-sm text-gray-600 mt-1">{getMeaning(result.word, lang)}</div>
                     </div>
                     <XCircle size={18} className="text-red-500" />
                   </div>

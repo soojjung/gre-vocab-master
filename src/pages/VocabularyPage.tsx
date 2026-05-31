@@ -5,13 +5,15 @@ import type { Word } from "@/types";
 import { useWords } from "@/contexts/WordsContext";
 import { useUserDataContext } from "@/contexts/UserDataContext";
 import { BackHeader } from "@/components/BackHeader";
-import { useT } from "@/i18n";
+import { useT, useLanguage } from "@/i18n";
+import { getMeaning, shouldShowExampleKo } from "@/lib/wordDisplay";
 
 type FilterType = "all" | "learning" | "mastered" | "bookmarked";
 
 export function VocabularyPage() {
   const navigate = useNavigate();
   const t = useT();
+  const { lang } = useLanguage();
   const { words } = useWords();
   const { userData, toggleBookmark } = useUserDataContext();
 
@@ -21,7 +23,8 @@ export function VocabularyPage() {
 
   const filteredWords = useMemo(() => {
     return words.filter((word) => {
-      const matchesSearch = searchQuery === "" || word.word.toLowerCase().includes(searchQuery.toLowerCase()) || word.meaning.includes(searchQuery);
+      const meaningText = lang === "ko" ? word.meaning : word.meaningEn ?? word.meaning;
+      const matchesSearch = searchQuery === "" || word.word.toLowerCase().includes(searchQuery.toLowerCase()) || meaningText.toLowerCase().includes(searchQuery.toLowerCase());
 
       const wordProgress = userData.progress[String(word.id)];
       let matchesFilter = true;
@@ -36,7 +39,7 @@ export function VocabularyPage() {
 
       return matchesSearch && matchesFilter;
     });
-  }, [words, userData.progress, searchQuery, filter]);
+  }, [words, userData.progress, searchQuery, filter, lang]);
 
   const getWordStatus = (wordId: number) => {
     const p = userData.progress[String(wordId)];
@@ -56,12 +59,12 @@ export function VocabularyPage() {
 
         <div className="px-5 py-8 pt-[calc(4.5rem+env(safe-area-inset-top,0px))] text-center">
           <div className="text-4xl font-bold text-gray-900 mb-4">{selectedWord.word}</div>
-          <div className="text-xl text-gray-600 mb-8">{selectedWord.meaning}</div>
+          <div className="text-xl text-gray-600 mb-8">{getMeaning(selectedWord, lang)}</div>
 
           <div className="bg-gray-50 rounded-2xl p-6 text-left mb-6">
             <div className="text-sm text-gray-500 mb-2">{t("vocab.example")}</div>
             <div className="text-gray-800 mb-2">{selectedWord.example}</div>
-            <div className="text-gray-500 text-sm">{selectedWord.exampleKo}</div>
+            {shouldShowExampleKo(lang) && <div className="text-gray-500 text-sm">{selectedWord.exampleKo}</div>}
           </div>
 
           <button onClick={() => toggleBookmark(String(selectedWord.id))} className={`mt-6 px-6 py-3 rounded-xl font-medium flex items-center gap-2 mx-auto ${wordStatus.bookmarked ? "bg-yellow-100 text-yellow-700" : "bg-gray-100 text-gray-700"}`}>
@@ -119,7 +122,7 @@ export function VocabularyPage() {
                       <span className="font-medium text-gray-900">{word.word}</span>
                       {status.bookmarked && <Star size={14} className="text-yellow-500 fill-yellow-500" />}
                     </div>
-                    <div className="text-sm text-gray-500 mt-1">{word.meaning}</div>
+                    <div className="text-sm text-gray-500 mt-1">{getMeaning(word, lang)}</div>
                   </div>
                   {status.status !== "new" && <span className={`text-sm font-medium ${status.status === "mastered" ? "text-green-500" : "text-gray-400"}`}>{status.status === "mastered" ? t("vocab.statusMastered") : t("vocab.statusLearning")}</span>}
                 </div>

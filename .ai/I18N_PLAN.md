@@ -121,14 +121,17 @@
 - [x] 잔여 한국어 리터럴 검출: `grep -rE '[가-힣]' src/` (JSX/JS 주석은 코딩 표준 허용으로 제외)
 - [ ] (선택, 보류) ESLint custom rule 또는 CI 체크
 
-### Phase 3 — 단어 데이터 영어화 (별도 트랙, 가장 무거움)
+### Phase 3 — 단어 데이터 영어화 (✅ 완료, 2026-06-01)
 
-- [ ] `Word` 타입 확장: `meaningEn: string` 추가 (`meaning`/`exampleKo` 유지)
-- [ ] 원본 PDF (Manhattan Prep / Target Test Prep) 에서 영어 정의 추출 스크립트 작성
-- [ ] 1500 단어 영어 뜻 머지 → `src/data/words-*.ts` 갱신
-- [ ] 단어 카드 컴포넌트에서 현재 언어 따라 `meaning` vs `meaningEn` 선택
-- [ ] 객관식 퀴즈 distractor 풀을 언어에 맞게 분기
-- [ ] 빈칸 채우기 / 학습 / 단어장 / 통계 모두 회귀 확인
+- [x] `Word` 타입 확장: `meaningEn?: string` 추가(optional, 기존 데이터 backward-compatible)
+- [x] 헬퍼 `src/lib/wordDisplay.ts` 신설: `getMeaning(word, lang)`, `shouldShowExampleKo(lang)` — 언어에 따라 meaning vs meaningEn 선택, 영어 모드에선 exampleKo 미표시
+- [x] 단어 카드(`FlashCard`), 단어장(`VocabularyPage`), 퀴즈 정답 표시(`QuizPlayPage` 다중 선택 프롬프트 + 정답 시 노출), 퀴즈 결과(`QuizResultPage` 오답 목록) 모두 헬퍼 사용
+- [x] `VocabularyPage` 검색: 현재 언어의 뜻으로 부분 일치 검색
+- [x] 객관식 퀴즈 distractor 풀: 영어/한국어 모두 같은 단어 풀(option.word 는 영어 단어이므로 풀 분기 불필요). 다중 선택 프롬프트만 언어 분기
+- [x] PDF 추출 스크립트 `scripts/extract-english-defs.mjs`: pdftotext -raw 출력 파싱 + form feed 정리 + 인라인 항목 누락 보정 → 1560/1560 단어 매칭
+- [x] 누락 24 단어(라틴어 약어 / 액센트 단어 등) 수동 정의: `scripts/manual-english-defs.json` + `scripts/apply-manual-defs.mjs`
+- [x] PDF italic 처리 누락으로 합쳐진 단어 일괄 정리: `scripts/fix-joined-words.mjs` (133건 자동 정리)
+- [x] 검증: `npx tsc -b` ✅, `npx eslint` ✅, 100% 커버리지(1560 단어)
 
 ### Phase 4 — 첫 진입 언어 선택 + 마이페이지 토글 (✅ 완료, 2026-06-01)
 
@@ -213,7 +216,7 @@ App Store Connect 작업 (`.ai/APP_STORE_METADATA.md` 참고):
 | 0. 결정 사항 확정        | ✅ 완료                      | 2026-06-01  |
 | 1. i18n 인프라           | ✅ 완료 (선택 항목 1건 보류) | 2026-06-01  |
 | 2. UI 문자열 추출        | ✅ 완료 (2a/2b/2c/2d)        | 2026-06-01  |
-| 3. 단어 데이터 영어화    | 🔲 미시작                    | 2026-06-01  |
+| 3. 단어 데이터 영어화    | ✅ 완료                      | 2026-06-01  |
 | 4. 언어 선택 화면 + 토글 | ✅ 완료                      | 2026-06-01  |
 | 5. iOS / App Store       | ✅ 완료 (코드)               | 2026-06-01  |
 | 6. QA / 릴리스           | 🔲 미시작                    | 2026-06-01  |
@@ -237,6 +240,21 @@ App Store Connect 작업 (`.ai/APP_STORE_METADATA.md` 참고):
 ## 8. 작업 로그
 
 > 날짜 / 무엇을 했는지 / 다음 작업. 새 항목은 **상단** 에 추가.
+
+### 2026-06-01 (저녁9) — Phase 3 완료 (단어 영어 뜻 1560개)
+- 신규 파일: `src/lib/wordDisplay.ts` (헬퍼), `scripts/extract-english-defs.mjs`, `scripts/manual-english-defs.json`, `scripts/apply-manual-defs.mjs`, `scripts/fix-joined-words.mjs`.
+- 수정 파일: `src/types.ts` (Word.meaningEn optional), `src/components/study/FlashCard.tsx`, `src/pages/{VocabularyPage,QuizPlayPage,QuizResultPage}.tsx`, `src/data/words-1..8.ts` (전 항목 meaningEn 추가).
+- 작업 흐름:
+  1. PDF → pdftotext -raw 로 추출
+  2. extract 스크립트: Manhattan(989) + TTP(1139) → 1546 매칭, 누락 24 식별
+  3. 누락 24개를 manual-english-defs.json 에 직접 작성 후 apply 스크립트로 머지 → 1560/1560 완료
+  4. PDF italic 텍스트 합쳐짐 패턴(예: "voidor", "wordor", "appliedto") 133건 일괄 정리
+- 헬퍼 `getMeaning(word, lang)`: 한국어 모드면 meaning, 영어 모드면 meaningEn ?? meaning(fallback)
+- 헬퍼 `shouldShowExampleKo(lang)`: 한국어 모드에서만 한국어 예문 번역 노출(영어 모드 사용자에겐 무의미)
+- VocabularyPage 검색은 현재 언어의 뜻 텍스트에서 부분 일치 검색
+- 검증: `npx tsc -b` ✅, `npx eslint` ✅
+- 사용자 액션 없음.
+- 다음 작업: **Phase 6 — QA / 릴리스** (두 언어 골든패스 + 영어 모드 레이아웃 회귀 점검 + 버전 bump + 사용자 승인 후 App Store 제출).
 
 ### 2026-06-01 (저녁8) — Phase 7 신설(사용자 액션 분리)
 - 사용자 요청으로 Phase 5 의 "사용자 액션 필요" 항목들을 **Phase 7** 로 분리. Phase 5 는 코드 작업만 남기고 ✅ 완료 처리.
