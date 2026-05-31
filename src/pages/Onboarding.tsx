@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { getTodayString, getDateAfterDays } from "@/lib/date";
 import { useT } from "@/i18n";
 
@@ -10,6 +11,7 @@ interface OnboardingProps {
 
 export function Onboarding({ onComplete }: OnboardingProps) {
   const t = useT();
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [targetDate, setTargetDate] = useState(() => getDateAfterDays(60));
   const [dailyGoal, setDailyGoal] = useState(25);
@@ -18,6 +20,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
   const handleComplete = async () => {
     setSaving(true);
     await onComplete(targetDate, dailyGoal, 3); // 기본값: 새벽 3시 (마이페이지에서 수정 가능)
+    navigate("/", { replace: true });
     setSaving(false);
   };
 

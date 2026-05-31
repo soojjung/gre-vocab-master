@@ -161,10 +161,13 @@
 
 ### Phase 6 — QA / 릴리스
 
-- [ ] 두 언어 각각 골든패스 수동 테스트 (Onboarding → 학습 → 퀴즈 → 결과 → 마이페이지 → 언어 변경)
-- [ ] 잔여 한국어 리터럴 grep
-- [ ] 영어 모드 레이아웃 점검 (영어가 한국어보다 평균 1.3~1.5배 길어 줄바꿈/오버플로 위험)
-- [ ] TTS 분기 점검
+QA (✅ 완료, 2026-06-01):
+- [x] 두 언어 각각 골든패스 수동 테스트 (Onboarding → 학습 → 퀴즈 → 결과 → 마이페이지 → 언어 변경)
+- [x] 잔여 한국어 리터럴 grep — 사용자 노출 0건
+- [x] 영어 모드 레이아웃 점검 (영어가 한국어보다 평균 1.3~1.5배 길어 줄바꿈/오버플로 위험) — 회귀 5건 수정
+- [x] TTS 분기 점검 — `tts.ts` 는 영단어 발음 전용(en-US 고정), 분기 불필요
+
+릴리스 단계 (별도 트랙):
 - [ ] `.ai/OPERATIONS_LOG.md` 에 릴리스 기록
 - [ ] 버전 bump 후 워크스페이스 자동 오픈 (memory: open Xcode before submission)
 - [ ] 사용자에게 커밋 승인 받고 커밋 → App Store 제출
@@ -219,7 +222,7 @@ App Store Connect 작업 (`.ai/APP_STORE_METADATA.md` 참고):
 | 3. 단어 데이터 영어화    | ✅ 완료                      | 2026-06-01  |
 | 4. 언어 선택 화면 + 토글 | ✅ 완료                      | 2026-06-01  |
 | 5. iOS / App Store       | ✅ 완료 (코드)               | 2026-06-01  |
-| 6. QA / 릴리스           | 🔲 미시작                    | 2026-06-01  |
+| 6. QA / 릴리스           | ✅ QA 완료 · 릴리스 대기     | 2026-06-01  |
 | 7. 사용자 액션 (Xcode + App Store Connect) | 🔲 대기 (사용자 처리) | 2026-06-01  |
 
 상태 표기: 🔲 미시작 · 🟡 진행중 · ✅ 완료 · ⛔ 차단
@@ -240,6 +243,25 @@ App Store Connect 작업 (`.ai/APP_STORE_METADATA.md` 참고):
 ## 8. 작업 로그
 
 > 날짜 / 무엇을 했는지 / 다음 작업. 새 항목은 **상단** 에 추가.
+
+### 2026-06-02 (새벽) — Phase 6 QA 완료 + 영어 모드 회귀 5건 수정
+
+- 두 언어 골든패스 수동 테스트 (사용자 직접 브라우저 확인). 결과: 영어 모드에서 5건 회귀 발견 → 같은 세션에서 모두 수정.
+- 잔여 한국어 grep (`grep -rnE '[가-힣]' src/`): 주석/console.error/타입 주석/사전 외 사용자 노출 0건. 의도된 한·영 병기(`LanguagePicker` "영어"/"한국어", `en.ts` `korean: "한국어"`, `document.title` 분기) 만 검출.
+- TTS (`src/lib/tts.ts`) 검증: 영단어 발음 전용, `en-US` 고정. 한국어 TTS 사용처 없어 분기 불필요.
+
+발견·수정한 회귀 5건:
+1. **Onboarding 완료 후 URL 보존 버그** — `/mypage/contact` 같은 비루트 URL 에서 회원가입 시 온보딩 후 해당 URL 로 떨어짐. `Onboarding.tsx` 의 `handleComplete` 마지막에 `navigate("/", { replace: true })` 추가.
+2. **`QuizResultPage` 오답 카드 X 아이콘 크기 불균일** — flex 컨테이너 안에서 텍스트 길이에 따라 `<XCircle>` 가 압축됨. `shrink-0` 추가.
+3. **`MyPageWrapper` ChevronRight 압축 위험** — 영문 라벨 길어지면 우측 화살표 압축. 6개 위치 모두 `shrink-0` 추가 (replace_all).
+4. **`HomePage` 복습 버튼 + `VocabularyPage` 상태 라벨 압축 위험** — 좌측 텍스트 길어지면 우측 요소 압축. `shrink-0 whitespace-nowrap` 추가.
+5. **`VocabularyPage` 필터 탭 가로 스크롤** — 영문 라벨이 길어 4개 탭이 한 줄에 안 맞아 가로 스크롤 발생. `overflow-x-auto` → `flex-wrap` 으로 변경 + 영문 라벨 단축(`Learning 📖`/`Done ✔️`/`Marked 🔖`) + 필터 일치 시 단어 카드 우측 상태 라벨 숨김(중복 제거) + 버튼 padding `px-4 → px-3`, gap `gap-2 → gap-1.5`.
+
+검증: 사용자 브라우저 확인 완료, "이제 문제 없는거 같다" 회신.
+
+다음 작업:
+- **릴리스 단계** — 위 수정사항 커밋 → `.ai/OPERATIONS_LOG.md` (필요 시) → 버전 1.5 → 1.6 bump → `npx cap sync ios` → Xcode 자동 오픈 → 사용자 Archive → App Store Connect 업로드
+- **Phase 7** — Xcode 에서 `.lproj` 등록 + App Store Connect 한·영 메타데이터 입력 (사용자 작업)
 
 ### 2026-06-01 (저녁9) — Phase 3 완료 (단어 영어 뜻 1560개)
 - 신규 파일: `src/lib/wordDisplay.ts` (헬퍼), `scripts/extract-english-defs.mjs`, `scripts/manual-english-defs.json`, `scripts/apply-manual-defs.mjs`, `scripts/fix-joined-words.mjs`.

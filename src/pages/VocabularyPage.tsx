@@ -97,14 +97,14 @@ export function VocabularyPage() {
         </div>
 
         {/* 필터 탭 */}
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+        <div className="flex flex-wrap gap-1.5 mb-6">
           {[
             { key: "all" as const, label: t("vocab.filterAll") },
             { key: "learning" as const, label: t("vocab.filterLearning") },
             { key: "mastered" as const, label: t("vocab.filterMastered") },
             { key: "bookmarked" as const, label: t("vocab.filterBookmarked") },
           ].map((tab) => (
-            <button key={tab.key} onClick={() => setFilter(tab.key)} className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${filter === tab.key ? "bg-black text-white" : "bg-gray-100 text-gray-600"}`}>
+            <button key={tab.key} onClick={() => setFilter(tab.key)} className={`px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${filter === tab.key ? "bg-black text-white" : "bg-gray-100 text-gray-600"}`}>
               {tab.label}
             </button>
           ))}
@@ -124,7 +124,7 @@ export function VocabularyPage() {
                     </div>
                     <div className="text-sm text-gray-500 mt-1">{getMeaning(word, lang)}</div>
                   </div>
-                  {status.status !== "new" && <span className={`text-sm font-medium ${status.status === "mastered" ? "text-green-500" : "text-gray-400"}`}>{status.status === "mastered" ? t("vocab.statusMastered") : t("vocab.statusLearning")}</span>}
+                  {status.status !== "new" && filter !== status.status && <span className={`shrink-0 whitespace-nowrap ml-3 text-sm font-medium ${status.status === "mastered" ? "text-green-500" : "text-gray-400"}`}>{status.status === "mastered" ? t("vocab.statusMastered") : t("vocab.statusLearning")}</span>}
                 </div>
               </div>
             );

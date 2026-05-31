@@ -378,7 +378,7 @@ export function MyPageWrapper() {
               </div>
               <span className="font-medium text-gray-900">{t("mypage.shortcutTodayStudy")}</span>
             </div>
-            <ChevronRight size={20} className="text-gray-400" />
+            <ChevronRight size={20} className="text-gray-400 shrink-0" />
           </button>
 
           <button onClick={() => navigate("/vocabulary")} className="w-full px-5 py-4 flex items-center justify-between active:bg-gray-50">
@@ -388,7 +388,7 @@ export function MyPageWrapper() {
               </div>
               <span className="font-medium text-gray-900">{t("mypage.shortcutVocabulary")}</span>
             </div>
-            <ChevronRight size={20} className="text-gray-400" />
+            <ChevronRight size={20} className="text-gray-400 shrink-0" />
           </button>
         </div>
 
@@ -405,7 +405,7 @@ export function MyPageWrapper() {
               </div>
               <span className="font-medium text-gray-900">{t("mypage.infoAbout")}</span>
             </div>
-            <ChevronRight size={20} className="text-gray-400" />
+            <ChevronRight size={20} className="text-gray-400 shrink-0" />
           </button>
 
           <button onClick={() => navigate("/mypage/contact")} className="w-full px-5 py-4 flex items-center justify-between border-b border-gray-100 active:bg-gray-50">
@@ -415,7 +415,7 @@ export function MyPageWrapper() {
               </div>
               <span className="font-medium text-gray-900">{t("mypage.infoSupport")}</span>
             </div>
-            <ChevronRight size={20} className="text-gray-400" />
+            <ChevronRight size={20} className="text-gray-400 shrink-0" />
           </button>
 
           <button onClick={() => navigate("/mypage/license")} className="w-full px-5 py-4 flex items-center justify-between border-b border-gray-100 active:bg-gray-50">
@@ -425,7 +425,7 @@ export function MyPageWrapper() {
               </div>
               <span className="font-medium text-gray-900">{t("mypage.infoLicense")}</span>
             </div>
-            <ChevronRight size={20} className="text-gray-400" />
+            <ChevronRight size={20} className="text-gray-400 shrink-0" />
           </button>
 
           <button onClick={() => navigate("/privacy-policy")} className="w-full px-5 py-4 flex items-center justify-between active:bg-gray-50">
@@ -435,7 +435,7 @@ export function MyPageWrapper() {
               </div>
               <span className="font-medium text-gray-900">{t("mypage.infoPrivacy")}</span>
             </div>
-            <ChevronRight size={20} className="text-gray-400" />
+            <ChevronRight size={20} className="text-gray-400 shrink-0" />
           </button>
         </div>
 

@@ -67,7 +67,7 @@ export function QuizResultPage() {
                       <div className="font-medium text-gray-900">{result.word.word}</div>
                       <div className="text-sm text-gray-600 mt-1">{getMeaning(result.word, lang)}</div>
                     </div>
-                    <XCircle size={18} className="text-red-500" />
+                    <XCircle size={18} className="text-red-500 shrink-0" />
                   </div>
                 </div>
               ))}

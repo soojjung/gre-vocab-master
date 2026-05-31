@@ -85,7 +85,7 @@ export function HomePage() {
                 <div className={`text-xs ${reviewCount > 0 ? "text-amber-600" : "text-gray-400"}`}>{reviewCount > 0 ? t("home.reviewWaiting", { count: reviewCount }) : t("home.noReviewWaiting")}</div>
               </div>
             </div>
-            <button onClick={() => navigate("/study?mode=review")} disabled={reviewCount === 0} className={`px-4 py-2 text-sm font-medium rounded-xl transition-colors ${reviewCount > 0 ? "bg-amber-500 text-white hover:bg-amber-600" : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}>
+            <button onClick={() => navigate("/study?mode=review")} disabled={reviewCount === 0} className={`shrink-0 whitespace-nowrap px-4 py-2 text-sm font-medium rounded-xl transition-colors ${reviewCount > 0 ? "bg-amber-500 text-white hover:bg-amber-600" : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}>
               {t("home.reviewBtn")}
             </button>
           </div>
