@@ -38,6 +38,7 @@ export interface UserData {
   streak: number; // 연속 학습일
   onboardingComplete: boolean; // 온보딩 완료 여부
   autoSpeak: boolean; // 자동 발음 재생 여부
+  locale: "ko" | "en"; // UI 언어 설정 (기기 간 동기화용)
   todaySession?: TodaySession; // 오늘의 학습 세션
 }
 
@@ -60,6 +61,7 @@ export const getDefaultUserData = (): UserData => {
     streak: 0,
     onboardingComplete: false,
     autoSpeak: true,
+    locale: "en", // 기본값. 실제 진입 언어는 LanguageProvider 가 localStorage/navigator 기반으로 결정
   };
 };
 

@@ -1,6 +1,7 @@
 import { Volume2 } from "lucide-react";
 import { speakWord } from "@/lib/tts";
 import type { Word } from "@/types";
+import { useT } from "@/i18n";
 
 interface FlashCardProps {
   word: Word;
@@ -9,10 +10,11 @@ interface FlashCardProps {
 }
 
 function CardFront({ word }: { word: string }) {
+  const t = useT();
   return (
     <>
       <div className="text-3xl font-bold mb-4">{word}</div>
-      <div className="text-sm text-gray-400">탭하여 뜻 보기</div>
+      <div className="text-sm text-gray-400">{t("study.card.tapToReveal")}</div>
     </>
   );
 }

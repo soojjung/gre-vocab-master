@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { BackHeader } from "@/components/BackHeader";
+import { useT } from "@/i18n";
 
 interface LicenseInfo {
   name: string;
@@ -44,15 +45,16 @@ Unless required by applicable law or agreed to in writing, software distributed 
 
 export function LicensePage() {
   const navigate = useNavigate();
+  const t = useT();
 
   return (
     <div className="min-h-screen bg-gray-50 relative">
-      <BackHeader title="라이선스 및 출처" onBack={() => navigate("/mypage")} />
+      <BackHeader title={t("license.title")} onBack={() => navigate("/mypage")} />
 
       <div className="px-5 py-6 pt-[calc(4.5rem+env(safe-area-inset-top,0px))] pb-8 space-y-5">
         <div className="space-y-4">
-          <h2 className="text-lg font-bold text-gray-900">단어 데이터 출처</h2>
-          <p className="text-sm text-gray-500">이 앱의 GRE 단어 데이터는 아래 자료를 참고하여 구성되었습니다.</p>
+          <h2 className="text-lg font-bold text-gray-900">{t("license.dataSourceTitle")}</h2>
+          <p className="text-sm text-gray-500">{t("license.dataSourceDesc")}</p>
 
           <div className="bg-white rounded-2xl p-5 space-y-4">
             <div>
@@ -71,8 +73,8 @@ export function LicensePage() {
         </div>
 
         <div className="mt-8 space-y-4">
-          <h2 className="text-lg font-bold text-gray-900">오픈소스 소프트웨어</h2>
-          <p className="text-sm text-gray-500">이 앱은 아래의 오픈소스 소프트웨어를 사용하고 있습니다.</p>
+          <h2 className="text-lg font-bold text-gray-900">{t("license.ossTitle")}</h2>
+          <p className="text-sm text-gray-500">{t("license.ossDesc")}</p>
 
           {licenses.map((lib) => (
             <div key={lib.name} className="bg-white rounded-2xl p-5">
@@ -92,7 +94,7 @@ export function LicensePage() {
         </div>
 
         <div className="mt-8 space-y-6">
-          <h2 className="text-lg font-bold text-gray-900">라이선스 전문</h2>
+          <h2 className="text-lg font-bold text-gray-900">{t("license.licenseTextsTitle")}</h2>
 
           {Object.entries(licenseTexts).map(([name, text]) => (
             <div key={name} className="bg-white rounded-2xl p-5">

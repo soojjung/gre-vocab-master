@@ -3,6 +3,28 @@
   <head>
     <meta charset="UTF-8" />
 
+    <!-- 부팅 언어 판정 (FOIT 방지): localStorage > navigator. body 페인트 전에 html[data-boot] 설정 -->
+    <script>
+      (function () {
+        var lang = "en";
+        try {
+          var s = localStorage.getItem("app.lang");
+          if (s === "ko" || s === "en") lang = s;
+          else lang = (navigator.language || "").toLowerCase().indexOf("ko") === 0 ? "ko" : "en";
+        } catch (e) {}
+        document.documentElement.lang = lang;
+        document.documentElement.setAttribute("data-boot", lang);
+      })();
+    </script>
+    <style>
+      html[data-boot="en"] [data-boot-lang="ko"] {
+        display: none;
+      }
+      html[data-boot="ko"] [data-boot-lang="en"] {
+        display: none;
+      }
+    </style>
+
     <!-- DNS Prefetch & Preconnect (성능 최적화) -->
     <link rel="dns-prefetch" href="//supabase.co" />
     <link rel="dns-prefetch" href="//googleapis.com" />
@@ -97,13 +119,15 @@
   </head>
   <body>
     <div id="root">
-      <!-- LCP 최적화: 최소한의 사전 렌더링 -->
+      <!-- LCP 최적화: 최소한의 사전 렌더링. 두 언어를 모두 두고 head 스크립트가 결정한 lang 한쪽만 노출 -->
       <div style="min-height:100vh;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px">
         <div style="width:64px;height:64px;background:#000;border-radius:16px;display:flex;align-items:center;justify-content:center;margin-bottom:16px">
           <span style="color:#fff;font-size:24px;font-weight:700">G</span>
         </div>
-        <h1 style="font-size:24px;font-weight:700;color:#111827;margin:0 0 8px">단어의 신 GRE</h1>
-        <p style="color:#6b7280;margin:0">1500 단어 정복의 시작</p>
+        <h1 data-boot-lang="ko" style="font-size:24px;font-weight:700;color:#111827;margin:0 0 8px">단어의 신 GRE</h1>
+        <h1 data-boot-lang="en" style="font-size:24px;font-weight:700;color:#111827;margin:0 0 8px">GRE Vocab Master</h1>
+        <p data-boot-lang="ko" style="color:#6b7280;margin:0">1500 단어 정복의 시작</p>
+        <p data-boot-lang="en" style="color:#6b7280;margin:0">Master 1,500 GRE words</p>
       </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>

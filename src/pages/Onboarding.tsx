@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { getTodayString, getDateAfterDays } from "@/lib/date";
+import { useT } from "@/i18n";
 
 const TOTAL_WORDS = 1500;
 
@@ -8,6 +9,7 @@ interface OnboardingProps {
 }
 
 export function Onboarding({ onComplete }: OnboardingProps) {
+  const t = useT();
   const [step, setStep] = useState(1);
   const [targetDate, setTargetDate] = useState(() => getDateAfterDays(60));
   const [dailyGoal, setDailyGoal] = useState(25);
@@ -35,8 +37,8 @@ export function Onboarding({ onComplete }: OnboardingProps) {
         <div className="w-16 h-16 bg-black rounded-2xl flex items-center justify-center mx-auto mb-4">
           <span className="text-white text-2xl font-bold">G</span>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">환영합니다!</h1>
-        <p className="text-gray-500 mt-2">학습 목표를 설정해주세요</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t("onboarding.welcomeTitle")}</h1>
+        <p className="text-gray-500 mt-2">{t("onboarding.welcomeSubtitle")}</p>
       </div>
 
       {/* 진행 표시 */}
@@ -47,15 +49,15 @@ export function Onboarding({ onComplete }: OnboardingProps) {
 
       {step === 1 && (
         <div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">GRE 시험일은 언제인가요?</h2>
-          <p className="text-gray-500 text-sm mb-6">목표일을 설정하면 D-day를 계산해드려요</p>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">{t("onboarding.testDateQ")}</h2>
+          <p className="text-gray-500 text-sm mb-6">{t("onboarding.testDateDesc")}</p>
 
           <div className="bg-gray-50 rounded-2xl p-6 mb-6">
             <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} min={getTodayString()} className="w-full bg-white border border-gray-200 rounded-xl px-4 py-4 text-gray-900 text-lg focus:outline-none focus:ring-2 focus:ring-black" />
 
             <div className="mt-4 text-center">
               <div className="text-4xl font-bold text-black">D-{getDday()}</div>
-              <div className="text-sm text-gray-500 mt-1">목표일까지</div>
+              <div className="text-sm text-gray-500 mt-1">{t("onboarding.untilTarget")}</div>
             </div>
           </div>
 
@@ -63,42 +65,42 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           <div className="grid grid-cols-3 gap-2">
             {[30, 60, 90].map((days) => (
               <button key={days} onClick={() => setTargetDate(getDateAfterDays(days))} className={`py-3 rounded-xl text-sm font-medium transition-colors ${getDday() === days ? "bg-black text-white" : "bg-gray-100 text-gray-600 active:bg-gray-200"}`}>
-                {days}일 후
+                {t("onboarding.daysFromNow", { days })}
               </button>
             ))}
           </div>
 
           <button onClick={() => setStep(2)} className="w-full bg-black text-white py-4 rounded-xl font-medium text-lg mt-8">
-            다음
+            {t("common.next")}
           </button>
         </div>
       )}
 
       {step === 2 && (
         <div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">하루에 몇 단어를 학습할까요?</h2>
-          <p className="text-gray-500 text-sm mb-6">권장: 25개 (약 15분 소요)</p>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">{t("onboarding.dailyGoalQ")}</h2>
+          <p className="text-gray-500 text-sm mb-6">{t("onboarding.dailyGoalRecommended")}</p>
 
           <div className="bg-gray-50 rounded-2xl p-6 mb-6">
             <div className="text-center mb-4">
               <div className="text-5xl font-bold text-black">{dailyGoal}</div>
-              <div className="text-sm text-gray-500 mt-1">단어/일</div>
+              <div className="text-sm text-gray-500 mt-1">{t("onboarding.wordsPerDay")}</div>
             </div>
 
             <input type="range" min="10" max="150" step="5" value={dailyGoal} onChange={(e) => setDailyGoal(Number(e.target.value))} className="w-full accent-black" />
 
             <div className="flex justify-between text-xs text-gray-400 mt-2">
-              <span>10개</span>
-              <span>150개</span>
+              <span>{t("common.itemsCount", { count: 10 })}</span>
+              <span>{t("common.itemsCount", { count: 150 })}</span>
             </div>
           </div>
 
           {/* 빠른 선택 */}
           <div className="grid grid-cols-3 gap-2">
             {[
-              { value: 25, label: "여유롭게", desc: "~15분" },
-              { value: 50, label: "권장", desc: "~30분" },
-              { value: 100, label: "빡세게", desc: "~60분" },
+              { value: 25, label: t("onboarding.paceEasy"), desc: t("onboarding.paceEasyDesc") },
+              { value: 50, label: t("onboarding.paceRecommended"), desc: t("onboarding.paceRecommendedDesc") },
+              { value: 100, label: t("onboarding.paceIntense"), desc: t("onboarding.paceIntenseDesc") },
             ].map((option) => (
               <button key={option.value} onClick={() => setDailyGoal(option.value)} className={`py-3 rounded-xl text-sm transition-colors ${dailyGoal === option.value ? "bg-black text-white" : "bg-gray-100 text-gray-600 active:bg-gray-200"}`}>
                 <div className="font-medium">{option.label}</div>
@@ -109,17 +111,15 @@ export function Onboarding({ onComplete }: OnboardingProps) {
 
           {/* 예상 완료일 */}
           <div className="bg-green-50 rounded-xl p-4 mt-6">
-            <div className="text-sm text-green-800">
-              이 속도로 학습하면 <strong>{Math.ceil(TOTAL_WORDS / dailyGoal)}일</strong>이면 {TOTAL_WORDS}단어를 마스터할 수 있어요!
-            </div>
+            <div className="text-sm text-green-800">{t("onboarding.completionEstimate", { days: Math.ceil(TOTAL_WORDS / dailyGoal), total: TOTAL_WORDS })}</div>
           </div>
 
           <div className="flex gap-3 mt-8">
             <button onClick={() => setStep(1)} disabled={saving} className="flex-1 bg-gray-100 text-gray-700 py-4 rounded-xl font-medium text-lg disabled:opacity-50">
-              이전
+              {t("common.previous")}
             </button>
             <button onClick={handleComplete} disabled={saving} className="flex-1 bg-black text-white py-4 rounded-xl font-medium text-lg disabled:opacity-50">
-              {saving ? "저장 중..." : "시작하기"}
+              {saving ? t("onboarding.saving") : t("onboarding.start")}
             </button>
           </div>
         </div>

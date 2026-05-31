@@ -1,6 +1,6 @@
 # 데이터베이스 스키마
 
-> Supabase (PostgreSQL) 기반. 최종 업데이트: 2026-04-30
+> Supabase (PostgreSQL) 기반. 최종 업데이트: 2026-06-01
 
 ---
 
@@ -24,6 +24,7 @@
 
 - **progress**: 단어별 학습 상태 (`status`, `correctCount`, `wrongCount`, `nextReview`, `interval`, `bookmarked`)
 - **today_session**: 오늘의 학습 세션 (`date`, `wordIds`, `currentIndex`, `completed`)
+- **locale**: UI 언어 설정 (`ko` | `en`). DB 기본값 `en`. 마이그레이션: `supabase-migration-locale.sql` (2026-06-01 추가). 마이그레이션 시 기존 사용자(모두 한국어 사용자)는 `ko` 로 일괄 백필. 앱에서 localStorage `app.lang` 우선, 그 다음 이 컬럼, 마지막 디바이스 감지 순으로 결정. Phase 4 에서 양방향 동기화 연결 예정.
 
 ### word_lists (1:N) — ⚠️ 현재 코드 미사용
 
@@ -93,6 +94,7 @@ DB snake_case ↔ 프론트 camelCase 변환: `useUserData.ts`
 | `user_data.last_study_date` | `UserData.lastStudyDate` | string |
 | `user_data.onboarding_complete` | `UserData.onboardingComplete` | boolean |
 | `user_data.auto_speak` | `UserData.autoSpeak` | boolean |
+| `user_data.locale` | `UserData.locale` | `"ko" \| "en"` |
 | `user_data.today_session` | `UserData.todaySession` | TodaySession |
 
 > `word_lists` / `custom_words` 의 TS 타입(`WordList`, `CustomWord`)은 기능 제거와 함께 `types.ts` 에서 삭제됨. 향후 재도입 시 재정의 필요.

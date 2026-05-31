@@ -1,11 +1,13 @@
 import { Mail, Copy, Check, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useT } from "@/i18n";
 
 const EMAIL = "sojjung3@gmail.com";
 
 export function SupportPage() {
   const navigate = useNavigate();
+  const t = useT();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -34,15 +36,15 @@ export function SupportPage() {
           <button onClick={() => navigate("/")} className="p-2 -ml-2 text-gray-600">
             <ArrowLeft size={24} />
           </button>
-          <h1 className="flex-1 text-center font-bold text-lg pr-8">고객센터</h1>
+          <h1 className="flex-1 text-center font-bold text-lg pr-8">{t("contact.title")}</h1>
         </div>
       </header>
 
       <div className="px-5 pt-[calc(4.5rem+env(safe-area-inset-top,0px))] pb-8 space-y-5">
         {/* 앱 정보 */}
         <div className="bg-white rounded-2xl p-6 text-center">
-          <h2 className="text-xl font-bold text-gray-900">GRE Vocab Master</h2>
-          <p className="text-sm text-gray-500 mt-1">GRE 단어 학습 앱</p>
+          <h2 className="text-xl font-bold text-gray-900">{t("common.appName")}</h2>
+          <p className="text-sm text-gray-500 mt-1">{t("contact.appDesc")}</p>
         </div>
 
         {/* 문의하기 */}
@@ -51,11 +53,11 @@ export function SupportPage() {
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Mail size={28} className="text-blue-600" />
             </div>
-            <h2 className="text-lg font-bold text-gray-900">문의하기</h2>
+            <h2 className="text-lg font-bold text-gray-900">{t("contact.inquiryTitle")}</h2>
             <p className="text-sm text-gray-500 mt-2">
-              버그 제보, 기능 요청, 기타 문의사항을
+              {t("contact.inquiryDescLine1")}
               <br />
-              아래 이메일로 보내주시면 확인 후 답변드리겠습니다.
+              {t("contact.inquiryDescLine2")}
             </p>
           </div>
 
@@ -66,12 +68,12 @@ export function SupportPage() {
                 {copied ? (
                   <>
                     <Check size={16} className="text-green-500" />
-                    <span className="text-green-500">복사됨</span>
+                    <span className="text-green-500">{t("common.copied")}</span>
                   </>
                 ) : (
                   <>
                     <Copy size={16} />
-                    <span>복사</span>
+                    <span>{t("common.copy")}</span>
                   </>
                 )}
               </button>
@@ -79,7 +81,7 @@ export function SupportPage() {
           </div>
 
           <a href={`mailto:${EMAIL}`} className="block w-full py-3 bg-black text-white text-center rounded-xl font-medium">
-            이메일 보내기
+            {t("contact.sendEmail")}
           </a>
         </div>
       </div>

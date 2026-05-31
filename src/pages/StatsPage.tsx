@@ -4,9 +4,11 @@ import { TrendingUp, Flame, Target, BookOpen, CheckCircle, Clock } from "lucide-
 import { useWords } from "@/contexts/WordsContext";
 import { useUserDataContext } from "@/contexts/UserDataContext";
 import { BackHeader } from "@/components/BackHeader";
+import { useT } from "@/i18n";
 
 export function StatsPage() {
   const navigate = useNavigate();
+  const t = useT();
   const { words } = useWords();
   const { userData, loading, getDday, getOverallProgress } = useUserDataContext();
 
@@ -60,7 +62,7 @@ export function StatsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 relative">
-        <BackHeader title="학습 통계" onBack={() => navigate("/")} />
+        <BackHeader title={t("stats.title")} onBack={() => navigate("/")} />
         <div className="px-5 py-6 pt-[calc(4.5rem+env(safe-area-inset-top,0px))] pb-8 space-y-5">
           <div className="bg-gray-300 rounded-2xl h-36 animate-pulse" />
           <div className="grid grid-cols-2 gap-4">
@@ -75,14 +77,14 @@ export function StatsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 relative">
-      <BackHeader title="학습 통계" onBack={() => navigate("/")} />
+      <BackHeader title={t("stats.title")} onBack={() => navigate("/")} />
 
       <div className="px-5 py-6 pt-[calc(4.5rem+env(safe-area-inset-top,0px))] pb-8 space-y-5">
         {/* 요약 카드 */}
         <div className="bg-black text-white rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <div className="text-gray-500 text-sm">전체 진도율</div>
+              <div className="text-gray-500 text-sm">{t("stats.overallProgress")}</div>
               <div className="text-3xl font-bold mt-1">{overallProgress.percentage}%</div>
             </div>
             <div className="w-16 h-16 rounded-full border-4 border-gray-700 flex items-center justify-center">
@@ -92,9 +94,7 @@ export function StatsPage() {
           <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
             <div className="h-full bg-white rounded-full transition-all duration-500" style={{ width: `${overallProgress.percentage}%` }} />
           </div>
-          <div className="text-sm text-gray-500 mt-2">
-            {overallProgress.mastered} / {overallProgress.total} 단어 완료
-          </div>
+          <div className="text-sm text-gray-500 mt-2">{t("stats.wordsComplete", { count: overallProgress.mastered, total: overallProgress.total })}</div>
         </div>
 
         {/* 스트릭 & D-day */}
@@ -104,16 +104,16 @@ export function StatsPage() {
               <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
                 <Flame size={20} className="text-orange-500" />
               </div>
-              <span className="text-sm text-gray-500">연속 학습</span>
+              <span className="text-sm text-gray-500">{t("stats.streakLabel")}</span>
             </div>
-            <div className="text-2xl font-bold text-gray-900">{userData.streak}일</div>
+            <div className="text-2xl font-bold text-gray-900">{t("stats.streakDays", { count: userData.streak })}</div>
           </div>
           <div className="bg-white rounded-2xl p-5">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
                 <Target size={20} className="text-blue-500" />
               </div>
-              <span className="text-sm text-gray-500">시험까지</span>
+              <span className="text-sm text-gray-500">{t("stats.untilExam")}</span>
             </div>
             <div className="text-2xl font-bold text-gray-900">{dday > 0 ? `D-${dday}` : dday === 0 ? "D-Day" : `D+${Math.abs(dday)}`}</div>
           </div>
@@ -121,17 +121,15 @@ export function StatsPage() {
 
         {/* 학습 현황 */}
         <div className="bg-white rounded-2xl p-5">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">학습 현황</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">{t("stats.studyStatus")}</h3>
           <div className="space-y-4">
             <div>
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-2">
                   <CheckCircle size={16} className="text-green-500" />
-                  <span className="text-sm text-gray-600">암기 완료</span>
+                  <span className="text-sm text-gray-600">{t("stats.statusMastered")}</span>
                 </div>
-                <span className="text-sm font-medium text-gray-900">
-                  {stats.statusCounts.mastered}개 ({progressPercentage(stats.statusCounts.mastered, stats.totalWords)}%)
-                </span>
+                <span className="text-sm font-medium text-gray-900">{t("stats.statusCount", { count: stats.statusCounts.mastered, percent: progressPercentage(stats.statusCounts.mastered, stats.totalWords) })}</span>
               </div>
               <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                 <div className="h-full bg-green-500 rounded-full" style={{ width: `${progressPercentage(stats.statusCounts.mastered, stats.totalWords)}%` }} />
@@ -141,11 +139,9 @@ export function StatsPage() {
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-2">
                   <BookOpen size={16} className="text-yellow-500" />
-                  <span className="text-sm text-gray-600">학습 중</span>
+                  <span className="text-sm text-gray-600">{t("stats.statusLearning")}</span>
                 </div>
-                <span className="text-sm font-medium text-gray-900">
-                  {stats.statusCounts.learning}개 ({progressPercentage(stats.statusCounts.learning, stats.totalWords)}%)
-                </span>
+                <span className="text-sm font-medium text-gray-900">{t("stats.statusCount", { count: stats.statusCounts.learning, percent: progressPercentage(stats.statusCounts.learning, stats.totalWords) })}</span>
               </div>
               <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                 <div className="h-full bg-yellow-500 rounded-full" style={{ width: `${progressPercentage(stats.statusCounts.learning, stats.totalWords)}%` }} />
@@ -155,11 +151,9 @@ export function StatsPage() {
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-2">
                   <Clock size={16} className="text-gray-400" />
-                  <span className="text-sm text-gray-600">미학습</span>
+                  <span className="text-sm text-gray-600">{t("stats.statusNew")}</span>
                 </div>
-                <span className="text-sm font-medium text-gray-900">
-                  {stats.statusCounts.new}개 ({progressPercentage(stats.statusCounts.new, stats.totalWords)}%)
-                </span>
+                <span className="text-sm font-medium text-gray-900">{t("stats.statusCount", { count: stats.statusCounts.new, percent: progressPercentage(stats.statusCounts.new, stats.totalWords) })}</span>
               </div>
               <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                 <div className="h-full bg-gray-300 rounded-full" style={{ width: `${progressPercentage(stats.statusCounts.new, stats.totalWords)}%` }} />
@@ -170,11 +164,11 @@ export function StatsPage() {
 
         {/* 난이도별 암기 현황 */}
         <div className="bg-white rounded-2xl p-5">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">난이도별 암기 현황</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">{t("stats.byDifficulty")}</h3>
           <div className="space-y-4">
             <div>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-600">쉬움 (Lv.1)</span>
+                <span className="text-sm text-gray-600">{t("stats.diffEasy")}</span>
                 <span className="text-sm font-medium text-gray-900">
                   {stats.difficultyStats.easy.mastered} / {stats.difficultyStats.easy.total}
                 </span>
@@ -190,7 +184,7 @@ export function StatsPage() {
             </div>
             <div>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-600">보통 (Lv.2)</span>
+                <span className="text-sm text-gray-600">{t("stats.diffMedium")}</span>
                 <span className="text-sm font-medium text-gray-900">
                   {stats.difficultyStats.medium.mastered} / {stats.difficultyStats.medium.total}
                 </span>
@@ -206,7 +200,7 @@ export function StatsPage() {
             </div>
             <div>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-600">어려움 (Lv.3)</span>
+                <span className="text-sm text-gray-600">{t("stats.diffHard")}</span>
                 <span className="text-sm font-medium text-gray-900">
                   {stats.difficultyStats.hard.mastered} / {stats.difficultyStats.hard.total}
                 </span>

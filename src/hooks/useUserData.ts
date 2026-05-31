@@ -5,7 +5,7 @@ import type { UserData, WordProgress, TodaySession } from "@/types";
 import { getDefaultUserData, SR_INTERVALS } from "@/types";
 
 // Supabase DB row를 UserData로 변환
-function rowToUserData(row: { streak: number; last_study_date: string | null; target_date: string | null; daily_goal: number; reset_hour?: number; today_learned: string[]; onboarding_complete: boolean; auto_speak: boolean; today_session: TodaySession | null; progress: Record<string, WordProgress> }): UserData {
+function rowToUserData(row: { streak: number; last_study_date: string | null; target_date: string | null; daily_goal: number; reset_hour?: number; today_learned: string[]; onboarding_complete: boolean; auto_speak: boolean; locale?: string | null; today_session: TodaySession | null; progress: Record<string, WordProgress> }): UserData {
   const defaultData = getDefaultUserData();
   return {
     targetDate: row.target_date ?? defaultData.targetDate,
@@ -17,6 +17,7 @@ function rowToUserData(row: { streak: number; last_study_date: string | null; ta
     streak: row.streak,
     onboardingComplete: row.onboarding_complete,
     autoSpeak: row.auto_speak,
+    locale: row.locale === "ko" || row.locale === "en" ? row.locale : defaultData.locale,
     todaySession: row.today_session ?? undefined,
   };
 }
@@ -33,6 +34,7 @@ function userDataToRow(userData: UserData, userId: string) {
     today_learned: userData.todayLearned,
     onboarding_complete: userData.onboardingComplete,
     auto_speak: userData.autoSpeak,
+    locale: userData.locale,
     today_session: userData.todaySession ?? null,
     progress: userData.progress,
     updated_at: new Date().toISOString(),
@@ -237,7 +239,7 @@ export function useUserData(userId?: string | null) {
 
   // 설정 변경
   const updateSettings = useCallback(
-    (settings: { targetDate?: string; dailyGoal?: number; resetHour?: number; autoSpeak?: boolean }) => {
+    (settings: { targetDate?: string; dailyGoal?: number; resetHour?: number; autoSpeak?: boolean; locale?: "ko" | "en" }) => {
       setUserData((prev) => ({
         ...prev,
         ...settings,

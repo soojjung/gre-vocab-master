@@ -3,9 +3,11 @@ import { User, BadgeQuestionMark, BookOpen, BookMarked, Flame, BarChart3 } from 
 import { useUserDataContext } from "@/contexts/UserDataContext";
 import { formatDday } from "@/lib/date";
 import { Button } from "@/components/common";
+import { useT } from "@/i18n";
 
 export function HomePage() {
   const navigate = useNavigate();
+  const t = useT();
   const { userData, loading, getDday, getReviewCount } = useUserDataContext();
 
   const dday = getDday();
@@ -29,26 +31,26 @@ export function HomePage() {
   return (
     <div className="relative">
       {/* 마이페이지 버튼 */}
-      <button onClick={() => navigate("/mypage")} className="absolute right-4 top-[calc(1rem+env(safe-area-inset-top,0px))] w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-200" aria-label="마이페이지">
+      <button onClick={() => navigate("/mypage")} className="absolute right-4 top-[calc(1rem+env(safe-area-inset-top,0px))] w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-200" aria-label={t("home.myPageAria")}>
         <User size={20} />
       </button>
 
       <main className="min-h-screen bg-white px-5 pb-24 pt-[calc(1rem+env(safe-area-inset-top,0px))]">
         {/* 헤더 */}
         <header className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">단어의 신 GRE</h1>
-          <p className="text-gray-500 mt-1">매일 꾸준히, 1500 단어 정복</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("common.appName")}</h1>
+          <p className="text-gray-500 mt-1">{t("home.subtitle")}</p>
         </header>
 
         {/* D-day 카드 */}
         <div className="bg-black text-white rounded-2xl p-6 mb-6">
-          <div className="text-sm text-gray-400 mb-1">목표 시험일까지</div>
+          <div className="text-sm text-gray-400 mb-1">{t("home.untilTargetDate")}</div>
           <div className="text-4xl font-bold">{formatDday(dday)}</div>
-          {dday < 0 && <div className="mt-2 text-sm text-gray-300">시험일이 지났어요. 목표일을 갱신해보세요!</div>}
+          {dday < 0 && <div className="mt-2 text-sm text-gray-300">{t("home.testDatePassed")}</div>}
           {userData.streak > 0 && (
             <div className="mt-3 text-sm text-gray-300 flex items-center gap-1">
               <Flame size={14} className="text-orange-400" />
-              연속 {userData.streak}일째 학습 중
+              {t("home.streak", { count: userData.streak })}
             </div>
           )}
         </div>
@@ -56,7 +58,7 @@ export function HomePage() {
         {/* 오늘 학습 현황 */}
         <div className="bg-gray-50 rounded-2xl p-5 mb-4">
           <div className="flex justify-between items-center mb-3">
-            <span className="text-sm text-gray-600">오늘 학습</span>
+            <span className="text-sm text-gray-600">{t("home.todayStudy")}</span>
             <span className="text-sm font-medium text-gray-900">
               {userData.todayLearned.length} / {userData.dailyGoal}
             </span>
@@ -79,29 +81,29 @@ export function HomePage() {
                 <BookOpen size={20} className={reviewCount > 0 ? "text-amber-600" : "text-gray-400"} />
               </div>
               <div>
-                <div className={`text-sm font-medium ${reviewCount > 0 ? "text-amber-800" : "text-gray-600"}`}>{reviewCount > 0 ? "복습할 단어가 있어요" : "SR 복습"}</div>
-                <div className={`text-xs ${reviewCount > 0 ? "text-amber-600" : "text-gray-400"}`}>{reviewCount > 0 ? `${reviewCount}개 대기 중` : "복습 대기 없음"}</div>
+                <div className={`text-sm font-medium ${reviewCount > 0 ? "text-amber-800" : "text-gray-600"}`}>{reviewCount > 0 ? t("home.reviewAvailable") : t("home.srReview")}</div>
+                <div className={`text-xs ${reviewCount > 0 ? "text-amber-600" : "text-gray-400"}`}>{reviewCount > 0 ? t("home.reviewWaiting", { count: reviewCount }) : t("home.noReviewWaiting")}</div>
               </div>
             </div>
             <button onClick={() => navigate("/study?mode=review")} disabled={reviewCount === 0} className={`px-4 py-2 text-sm font-medium rounded-xl transition-colors ${reviewCount > 0 ? "bg-amber-500 text-white hover:bg-amber-600" : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}>
-              복습하기
+              {t("home.reviewBtn")}
             </button>
           </div>
         </div>
 
         {/* 액션 버튼들 */}
-        <nav className="space-y-3 mt-8" aria-label="주요 메뉴">
+        <nav className="space-y-3 mt-8" aria-label={t("home.menuAria")}>
           <Button onClick={() => navigate("/study")} icon={<BookOpen size={20} />}>
-            오늘의 학습 시작
+            {t("home.todayStudyBtn")}
           </Button>
           <Button variant="secondary" onClick={() => navigate("/quiz")} icon={<BadgeQuestionMark size={20} />}>
-            퀴즈 모드
+            {t("home.quizMode")}
           </Button>
           <Button variant="secondary" onClick={() => navigate("/vocabulary")} icon={<BookMarked size={20} />}>
-            단어장
+            {t("home.vocabulary")}
           </Button>
           <Button variant="secondary" onClick={() => navigate("/stats")} icon={<BarChart3 size={20} />}>
-            학습 통계
+            {t("home.stats")}
           </Button>
         </nav>
       </main>

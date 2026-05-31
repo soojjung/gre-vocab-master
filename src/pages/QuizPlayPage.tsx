@@ -7,6 +7,7 @@ import type { Word } from "@/types";
 import { useUserDataContext } from "@/contexts/UserDataContext";
 import { useQuiz } from "@/contexts/QuizContext";
 import { getBlankSentence } from "@/lib/blankSentence";
+import { useT } from "@/i18n";
 
 interface QuizQuestion {
   word: Word;
@@ -40,6 +41,7 @@ function generateQuestions(availableWords: Word[], count: number): QuizQuestion[
 
 export function QuizPlayPage() {
   const navigate = useNavigate();
+  const t = useT();
   const { words } = useWords();
   const { userData, loading } = useUserDataContext();
   const { quizType, quizCount, setQuizResults } = useQuiz();
@@ -97,9 +99,9 @@ export function QuizPlayPage() {
       const isCorrect = index === question.correctIndex;
 
       if (isCorrect) {
-        toast.success("정답입니다!", { duration: TOAST_DURATION });
+        toast.success(t("quiz.correct"), { duration: TOAST_DURATION });
       } else {
-        toast.error(`오답! 정답: ${question.word.word}`, { duration: TOAST_DURATION });
+        toast.error(t("quiz.wrong", { word: question.word.word }), { duration: TOAST_DURATION });
       }
 
       setResults((prev) => [
@@ -114,7 +116,7 @@ export function QuizPlayPage() {
 
       timeoutRef.current = setTimeout(goToNext, TOAST_DURATION);
     },
-    [showResult, goToNext]
+    [showResult, goToNext, t]
   );
 
   // 로딩 중이면 로딩 화면 표시
@@ -167,13 +169,13 @@ export function QuizPlayPage() {
       <div className="flex-1 px-5 py-6">
         {quizType === "fill-blank" ? (
           <div>
-            <div className="text-sm text-gray-500 mb-2">빈칸에 알맞은 단어를 선택하세요</div>
+            <div className="text-sm text-gray-500 mb-2">{t("quiz.fillBlankPrompt")}</div>
             <div className="text-lg text-gray-900 leading-relaxed mb-2">{getBlankSentence(currentQuestion.word.example, currentQuestion.word.word)}</div>
             <div className="text-sm text-gray-500 mb-8">{currentQuestion.word.exampleKo}</div>
           </div>
         ) : (
           <div>
-            <div className="text-sm text-gray-500 mb-2">다음 뜻에 해당하는 단어를 선택하세요</div>
+            <div className="text-sm text-gray-500 mb-2">{t("quiz.multipleChoicePrompt")}</div>
             <div className="text-xl font-medium text-gray-900 mb-8">{currentQuestion.word.meaning}</div>
           </div>
         )}

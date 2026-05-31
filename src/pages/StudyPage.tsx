@@ -2,9 +2,11 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/common";
 import { FlashCard, StudyComplete, StudyHeader, AnswerButtons, AutoSpeakToggle } from "@/components/study";
 import { useStudySession } from "@/hooks/useStudySession";
+import { useT } from "@/i18n";
 
 export function StudyPage() {
   const navigate = useNavigate();
+  const t = useT();
   const [searchParams] = useSearchParams();
   const isReviewOnlyMode = searchParams.get("mode") === "review";
 
@@ -59,20 +61,21 @@ export function StudyPage() {
   // SR 복습 전용 모드
   if (isReviewOnlyMode) {
     if (srReviewComplete || srReviewWords.length === 0) {
+      const isEmpty = srReviewWords.length === 0;
       return (
         <div className="min-h-dvh bg-white px-5 py-8 flex flex-col">
           <div className="flex-1 flex flex-col items-center justify-center text-center">
             <div className="text-6xl mb-6">🎉</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">{srReviewWords.length === 0 ? "복습할 단어가 없어요" : "복습 완료!"}</h2>
-            <p className="text-gray-500 mb-8">{srReviewWords.length === 0 ? "새로운 단어를 학습해보세요" : "수고했어요! 간격 반복 알고리즘에 따라 다음 복습일이 설정되었어요"}</p>
-            {srReviewWords.length > 0 && (
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">{isEmpty ? t("study.review.emptyTitle") : t("study.review.completeTitle")}</h2>
+            <p className="text-gray-500 mb-8">{isEmpty ? t("study.review.emptySubtitle") : t("study.review.completeSubtitle")}</p>
+            {!isEmpty && (
               <div className="bg-gray-50 rounded-2xl p-6 w-full max-w-xs mb-8">
-                <div className="text-4xl font-bold text-gray-900 mb-2">{srReviewWords.length}개</div>
-                <div className="text-sm text-gray-500">단어 복습 완료</div>
+                <div className="text-4xl font-bold text-gray-900 mb-2">{t("common.itemsCount", { count: srReviewWords.length })}</div>
+                <div className="text-sm text-gray-500">{t("study.review.completeLabel")}</div>
               </div>
             )}
           </div>
-          <Button onClick={() => navigate("/")}>홈으로 돌아가기</Button>
+          <Button onClick={() => navigate("/")}>{t("study.complete.goHome")}</Button>
         </div>
       );
     }
@@ -86,13 +89,13 @@ export function StudyPage() {
       <div className="min-h-dvh bg-white px-5 pb-8 flex flex-col pt-[max(2rem,env(safe-area-inset-top))]">
         <StudyHeader current={srReviewIndex + 1} total={srReviewWords.length} onBack={() => navigate("/")} />
         <div className="mb-2 text-center">
-          <span className="text-xs text-amber-600 bg-amber-50 px-3 py-1 rounded-full">SR 복습</span>
+          <span className="text-xs text-amber-600 bg-amber-50 px-3 py-1 rounded-full">{t("study.srBadge")}</span>
         </div>
         <FlashCard word={currentSrWord} isFlipped={isFlipped} onFlip={() => setIsFlipped(true)} />
         <AutoSpeakToggle enabled={userData.autoSpeak} onToggle={toggleAutoSpeak} />
         {isFlipped && (
           <div className="mt-6">
-            <Button onClick={handleSrReviewNext}>{srReviewIndex < srReviewWords.length - 1 ? "다음 단어" : "복습 완료"}</Button>
+            <Button onClick={handleSrReviewNext}>{srReviewIndex < srReviewWords.length - 1 ? t("study.nextWord") : t("study.reviewComplete")}</Button>
           </div>
         )}
       </div>
@@ -137,9 +140,9 @@ export function StudyPage() {
   if (!currentWord) {
     return (
       <div className="min-h-dvh bg-white px-5 pb-8 flex flex-col items-center justify-center pt-[max(2rem,env(safe-area-inset-top))]">
-        <p className="text-gray-500">학습할 단어가 없습니다.</p>
+        <p className="text-gray-500">{t("study.noWords")}</p>
         <button onClick={() => navigate("/")} className="mt-4 text-black underline">
-          돌아가기
+          {t("study.goBack")}
         </button>
       </div>
     );
@@ -153,7 +156,7 @@ export function StudyPage() {
       <AutoSpeakToggle enabled={userData.autoSpeak} onToggle={toggleAutoSpeak} />
       {isFlipped && (
         <div className="mt-6">
-          <Button onClick={handleNext}>{currentIndex < studyWords.length - 1 ? "다음 단어" : "학습 완료"}</Button>
+          <Button onClick={handleNext}>{currentIndex < studyWords.length - 1 ? t("study.nextWord") : t("study.studyComplete")}</Button>
         </div>
       )}
     </div>

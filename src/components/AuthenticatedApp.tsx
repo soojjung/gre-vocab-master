@@ -4,6 +4,7 @@ import { UserDataProvider, useUserDataContext } from "@/contexts/UserDataContext
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { Onboarding } from "@/pages/Onboarding";
 import { HomePage } from "@/pages/HomePage";
+import { useT, LocaleSync } from "@/i18n";
 
 // 코드 스플리팅: 필요할 때 로드
 const StudyPage = lazy(() => import("@/pages/StudyPage").then((m) => ({ default: m.StudyPage })));
@@ -31,6 +32,7 @@ interface AuthenticatedAppProps {
 
 function AuthenticatedAppContent() {
   const { userData, loading: dataLoading, completeOnboarding } = useUserDataContext();
+  const t = useT();
 
   // 데이터 로딩 중
   if (dataLoading) {
@@ -38,7 +40,7 @@ function AuthenticatedAppContent() {
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-gray-200 border-t-black rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-500">로딩 중...</p>
+          <p className="text-gray-500">{t("common.loading")}</p>
         </div>
       </div>
     );
@@ -74,6 +76,7 @@ function AuthenticatedAppContent() {
 export function AuthenticatedApp({ userId }: AuthenticatedAppProps) {
   return (
     <UserDataProvider userId={userId}>
+      <LocaleSync />
       <AuthenticatedAppContent />
     </UserDataProvider>
   );

@@ -1,0 +1,3 @@
+/* Korean localization for Info.plist */
+CFBundleDisplayName = "단어의 신 GRE";
+CFBundleName = "단어의 신 GRE";

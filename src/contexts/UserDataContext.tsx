@@ -8,7 +8,7 @@ interface UserDataContextType {
   loading: boolean;
   recordAnswer: (wordId: string, correct: boolean) => void;
   toggleBookmark: (wordId: string) => void;
-  updateSettings: (settings: { targetDate?: string; dailyGoal?: number; resetHour?: number; autoSpeak?: boolean }) => void;
+  updateSettings: (settings: { targetDate?: string; dailyGoal?: number; resetHour?: number; autoSpeak?: boolean; locale?: "ko" | "en" }) => void;
   completeOnboarding: (targetDate: string, dailyGoal: number, resetHour?: number) => Promise<void>;
   resetData: () => void;
   getDday: () => number;

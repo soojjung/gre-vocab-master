@@ -5,11 +5,13 @@ import type { Word } from "@/types";
 import { useWords } from "@/contexts/WordsContext";
 import { useUserDataContext } from "@/contexts/UserDataContext";
 import { BackHeader } from "@/components/BackHeader";
+import { useT } from "@/i18n";
 
 type FilterType = "all" | "learning" | "mastered" | "bookmarked";
 
 export function VocabularyPage() {
   const navigate = useNavigate();
+  const t = useT();
   const { words } = useWords();
   const { userData, toggleBookmark } = useUserDataContext();
 
@@ -57,7 +59,7 @@ export function VocabularyPage() {
           <div className="text-xl text-gray-600 mb-8">{selectedWord.meaning}</div>
 
           <div className="bg-gray-50 rounded-2xl p-6 text-left mb-6">
-            <div className="text-sm text-gray-500 mb-2">예문</div>
+            <div className="text-sm text-gray-500 mb-2">{t("vocab.example")}</div>
             <div className="text-gray-800 mb-2">{selectedWord.example}</div>
             <div className="text-gray-500 text-sm">{selectedWord.exampleKo}</div>
           </div>
@@ -66,12 +68,12 @@ export function VocabularyPage() {
             {wordStatus.bookmarked ? (
               <>
                 <BookmarkCheck size={18} />
-                북마크 해제
+                {t("vocab.removeBookmark")}
               </>
             ) : (
               <>
                 <Bookmark size={18} />
-                북마크 추가
+                {t("vocab.addBookmark")}
               </>
             )}
           </button>
@@ -82,24 +84,24 @@ export function VocabularyPage() {
 
   return (
     <div className="min-h-screen bg-white pb-8 relative">
-      <BackHeader title="단어장" onBack={() => navigate(-1)} />
+      <BackHeader title={t("vocab.title")} onBack={() => navigate(-1)} />
 
       <div className="px-5 pt-[calc(4.5rem+env(safe-area-inset-top,0px))]">
         {/* 검색 */}
         <div className="relative mb-4">
-          <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="단어 또는 뜻 검색" className="w-full bg-gray-100 rounded-xl px-4 py-3 pl-10 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black" />
+          <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t("vocab.searchPlaceholder")} className="w-full bg-gray-100 rounded-xl px-4 py-3 pl-10 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black" />
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
         </div>
 
         {/* 필터 탭 */}
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
           {[
-            { key: "all", label: "전체" },
-            { key: "learning", label: "학습중 📖" },
-            { key: "mastered", label: "암기완료 ✔️" },
-            { key: "bookmarked", label: "북마크 🔖" },
+            { key: "all" as const, label: t("vocab.filterAll") },
+            { key: "learning" as const, label: t("vocab.filterLearning") },
+            { key: "mastered" as const, label: t("vocab.filterMastered") },
+            { key: "bookmarked" as const, label: t("vocab.filterBookmarked") },
           ].map((tab) => (
-            <button key={tab.key} onClick={() => setFilter(tab.key as FilterType)} className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${filter === tab.key ? "bg-black text-white" : "bg-gray-100 text-gray-600"}`}>
+            <button key={tab.key} onClick={() => setFilter(tab.key)} className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${filter === tab.key ? "bg-black text-white" : "bg-gray-100 text-gray-600"}`}>
               {tab.label}
             </button>
           ))}
@@ -119,14 +121,14 @@ export function VocabularyPage() {
                     </div>
                     <div className="text-sm text-gray-500 mt-1">{word.meaning}</div>
                   </div>
-                  {status.status !== "new" && <span className={`text-sm font-medium ${status.status === "mastered" ? "text-green-500" : "text-gray-400"}`}>{status.status === "mastered" ? "암기완료" : "학습중"}</span>}
+                  {status.status !== "new" && <span className={`text-sm font-medium ${status.status === "mastered" ? "text-green-500" : "text-gray-400"}`}>{status.status === "mastered" ? t("vocab.statusMastered") : t("vocab.statusLearning")}</span>}
                 </div>
               </div>
             );
           })}
         </div>
 
-        {filteredWords.length === 0 && <div className="text-center text-gray-500 py-12">{searchQuery ? "검색 결과가 없습니다" : "단어가 없습니다"}</div>}
+        {filteredWords.length === 0 && <div className="text-center text-gray-500 py-12">{searchQuery ? t("vocab.emptySearch") : t("vocab.empty")}</div>}
       </div>
     </div>
   );

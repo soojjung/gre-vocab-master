@@ -6,6 +6,7 @@ import { Capacitor } from "@capacitor/core";
 import { App } from "@capacitor/app";
 import { Browser } from "@capacitor/browser";
 import { SignInWithApple } from "@capacitor-community/apple-sign-in";
+import { useT } from "@/i18n";
 
 interface AuthContextType {
   user: User | null;
@@ -59,6 +60,7 @@ const getInitialLoading = () => {
 };
 
 export function AuthProvider({ children }: AuthProviderProps) {
+  const t = useT();
   const [user, setUser] = useState<User | null>(null);
   // 세션이 있을 때만 로딩 표시 (첫 방문자는 즉시 Login 표시)
   const [loading, setLoading] = useState(getInitialLoading);
@@ -226,7 +228,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         if (!data.user) {
           console.error("[Auth] Apple 로그인: signInWithIdToken 성공했지만 user가 null");
-          throw new Error("Apple 로그인에 실패했습니다. 다시 시도해주세요.");
+          // i18n: Login 의 catch 에서 err.message 를 그대로 표시하므로 t() 로 현재 언어 메시지 던짐
+          throw new Error(t("login.error.appleFailed"));
         }
 
         // signInWithIdToken은 세션과 유저 정보를 직접 반환함
@@ -289,7 +292,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const deleteAccount = async () => {
     const userId = user?.id;
-    if (!userId) throw new Error("로그인 상태가 아닙니다.");
+    // ContactPage 의 catch 가 err.message 를 읽지 않으므로 내부 sentinel 만 던짐
+    if (!userId) throw new Error("not_signed_in");
 
     // 1. 단어장 데이터 삭제 (custom_words → word_lists 순서)
     const { error: wordsError } = await supabase.from("custom_words").delete().eq("user_id", userId);
