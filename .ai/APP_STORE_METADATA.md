@@ -30,11 +30,13 @@ App Store Connect 제한:
 - **Subtitle**: 30자
 - **Promotional Text**: 170자 (앱 업데이트 없이 수시 변경 가능)
 
+> **이름 정책 (1.6, 2026-06-02 결정)**: App Store 등록 이름은 SEO/검색용으로 길게 (`1500 Essential GRE` / `1,500개 GRE 필수 단어`), 부제 + 홈 화면명 + 앱 내 표시명은 브랜드명 (`GRE Vocab Master` / `단어의 신 GRE`) 으로 유지. App Store 등록 이름 후보 다수가 충돌해 SEO 친화 + 브랜드 분리 전략으로 전환.
+
 ### English (en-US)
 
 ```
-Name:               GRE Vocab Master
-Subtitle:           1,500 GRE Words. Focused.
+Name:               1500 Essential GRE
+Subtitle:           GRE Vocab Master
 Promotional Text:   Quiet, distraction-free flashcards for serious GRE prep.
                     Spaced repetition built in. No ads, no clutter — just the
                     words you need to learn.
@@ -43,8 +45,8 @@ Promotional Text:   Quiet, distraction-free flashcards for serious GRE prep.
 ### Korean (ko)
 
 ```
-Name:               단어의 신 GRE
-Subtitle:           1,500개 GRE 필수 단어
+Name:               1,500개 GRE 필수 단어
+Subtitle:           단어의 신 GRE
 Promotional Text:   집중에 방해되지 않는 깔끔한 GRE 단어 암기 앱. 간격 반복 학습으로
                     효율적으로 외우고, 광고 없이 단어 학습에만 집중하세요.
 ```
