@@ -4,11 +4,11 @@ A full-stack vocabulary learning platform designed to help GRE test-takers maste
 
 Available on both **Web** and **iOS**.
 
+**Live demo:** [gre-vocab-master.vercel.app](https://gre-vocab-master.vercel.app/)
+
 [![Download on the App Store](https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg)](https://apps.apple.com/app/id6758345755)
 
-<p align="center">
-  <img src="./docs/demo.gif" alt="GRE Vocab Master demo" width="280" />
-</p>
+https://github.com/user-attachments/assets/f3f73b90-20e5-4ad5-8dcd-b7b2387a32ac
 
 ---
 
