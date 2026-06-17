@@ -20,6 +20,7 @@
 | iOS/배포    | Phase 7 — Xcode `.lproj` 등록 + App Store Connect 한·영 메타데이터 입력 (`.ai/APP_STORE_METADATA.md`) |
 | 개발자 경험 | 단위 테스트 환경(vitest) 도입 검토                                                                    |
 | 개발자 경험 | `/commit` 시 코드 리뷰 에이전트 자동 트리거                                                           |
+| 개발자 경험 | `/commit` 시 문서 관리 서브 에이전트 자동 트리거 (README · `.ai/*` 일관성 점검)                       |
 | 개발자 경험 | Playwright 테스트 작성                                                                                |
 
 > 완료된 항목은 행을 삭제. git log 가 흔적 (커밋 메시지로 추적). 운영 이슈에서 비롯된 항목이면 `.ai/OPERATIONS_LOG.md` 에도 별도 기록.

@@ -1,170 +1,196 @@
 # GRE Vocab Master
 
-A flashcard app for GRE vocabulary preparation, available on **web** and **iOS**. Master **1,560 essential words** from Manhattan Prep and Target Test Prep using spaced repetition.
+A full-stack vocabulary learning platform designed to help GRE test-takers master 1,560 high-frequency words through spaced repetition, quizzes, and progress tracking.
+
+Available on both **Web** and **iOS**.
 
 [![Download on the App Store](https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg)](https://apps.apple.com/app/id6758345755)
 
-## Who Is This For?
+<p align="center">
+  <img src="./docs/demo.gif" alt="GRE Vocab Master demo" width="280" />
+</p>
 
-- **GRE test takers**: Study vocabulary systematically with a D-day countdown
-- **English learners**: Learn advanced English words with example sentences
-- **Busy learners**: Study on the go with the web or iOS app
+---
 
-## How to Use
+## Overview
 
-### 1. Daily Flashcard Study
+GRE Vocab Master was built to make GRE vocabulary learning more effective and engaging.
 
-- Set a daily goal (default: 25 words) and tap "Start Today's Study" on the home screen
-- View a word on the flashcard, recall the meaning, then flip to check
-- Mark "Know" or "Don't Know" — the spaced repetition algorithm adjusts review intervals accordingly
-- Enable auto-pronunciation to hear each word spoken aloud
-- New words are shuffled randomly each session to prevent positional memorization
+The platform combines flashcards, quizzes, progress tracking, and pronunciation support into a single learning experience, helping users retain vocabulary through active recall and repeated exposure.
 
-### 2. Quiz Yourself
+---
 
-- **Fill-in-the-blank**: Complete sentences with the correct vocabulary word
-- **Multiple choice**: Match English words to their definitions
-- Each quiz consists of 20 questions to test your retention
+## Why I Built This
 
-### 3. Review in the Word List
+While preparing for graduate school applications in the United States, I found that traditional vocabulary lists were difficult to retain and lacked an effective review workflow.
 
-- Search for specific words quickly
-- Filter by status: All / Learning / Mastered / Bookmarked
-- Bookmark frequently missed words for focused review
+To solve this problem, I built GRE Vocab Master — a cross-platform learning application that helps learners systematically study and review GRE vocabulary through spaced repetition and personalized progress tracking.
 
-### 4. Track Your Progress
+---
 
-- View overall progress and daily study counts
-- Maintain your study streak for motivation
+## Architecture
 
-## Features
+```
+User
+  │
+  ▼
+React + TypeScript
+  │
+  ├── Supabase Auth
+  ├── PostgreSQL Database
+  ├── Sentry (error tracking)
+  │
+  ▼
+Vercel Serverless Functions
+  │
+  ▼
+Google Cloud Text-to-Speech
+```
 
-| Feature            | Description                                           |
-| ------------------ | ----------------------------------------------------- |
-| Flashcards         | English word → Korean definition + example sentence   |
-| Auto Pronunciation | Consistent English pronunciation via Google Cloud TTS |
-| Spaced Repetition  | Missed words appear more often; known words less      |
-| Random Order       | New words are shuffled each session                   |
-| Quiz Mode          | Fill-in-the-blank and multiple choice quizzes         |
-| Word List          | Search, filter, and bookmark words                    |
-| Statistics         | Progress tracking, daily counts, weak word analysis   |
-| D-day Countdown    | Days remaining until your target test date            |
-| iOS App            | Available on the App Store                            |
-| My Page            | Study settings, contact, developer note, license      |
+---
+
+## Key Features
+
+### Vocabulary Learning
+
+1,560 curated GRE words via flashcard-based active recall, with randomized sessions to prevent positional memorization.
+
+### Quiz System
+
+Fill-in-the-blank and multiple-choice quizzes built for retention-focused review.
+
+### Progress Tracking
+
+Daily goals, learning streaks, and per-word mastery statistics.
+
+### Pronunciation Support
+
+Real-time playback via Google Cloud Text-to-Speech, with the Web Speech API as a fallback.
+
+### Cross-Platform Experience
+
+Native iOS app via Capacitor, plus the web build as a PWA.
+
+---
+
+## Impact
+
+Real-world outcomes from building, shipping, and operating GRE Vocab Master in production.
+
+- **~30 active iOS users** — small enough to know each, large enough to surface bugs that synthetic tests miss.
+- **User-reported regex bug → English-morphology-aware fix.** A learner emailed a screenshot showing the answer (`harrow`) appearing verbatim in `...harrowed the viewers`. The blank-fill quiz was using `\bword\b` exact-match, blind to English inflection. I rebuilt the matcher in [`src/lib/blankSentence.ts`](./src/lib/blankSentence.ts) to handle four morphology families — `-ed/-ing/-ation`, `y → i`, silent-`e` drop, consonant doubling — moving blank-quiz coverage from **80% → 99.9%** across all 1,560 words. Shipped as v1.4 the same day. ([postmortem](./.ai/OPERATIONS_LOG.md))
+- **6 versions shipped** (1.0 → 1.6) over 5 months — every release tied to a user-facing feature or an incident postmortem.
+- **1,560 curated GRE words** localized in **English + Korean**, with native iOS metadata and screenshots in both locales.
+- **5 production issues investigated and resolved**, each documented with root cause analysis and lessons learned in [`.ai/OPERATIONS_LOG.md`](./.ai/OPERATIONS_LOG.md).
+- **Production observability** via Sentry on web + iOS — a TypeError (`undefined is not an object`) surfaced through the weekly digest within 7 days and shipped as version 1.5.
+
+---
 
 ## Tech Stack
 
 ### Frontend
 
-- **React 19** - UI library
-- **TypeScript** - Type safety
-- **Vite 7** - Build tool
-- **Tailwind CSS 4** - Styling
-- **React Router DOM** - Routing
+- React 19
+- TypeScript
+- Vite
+- Tailwind CSS
+- React Router
 
-### Backend & Auth
+### Backend & Infrastructure
 
-- **Supabase** - Authentication & PostgreSQL database
-- **Vercel Serverless Functions** - TTS API proxy
-- **Google Cloud TTS** - English pronunciation synthesis
+- Supabase Authentication
+- PostgreSQL
+- Vercel Serverless Functions
 
-### UI/UX
+### External Services
 
-- **Lucide React** - Icons
-- **Sonner** - Toast notifications
+- Google Cloud Text-to-Speech
 
 ### Mobile
 
-- **Capacitor** - iOS native app wrapper
+- Capacitor
 
-## Getting Started
+---
+
+## Technical Challenges & Learnings
+
+### Cross-Platform Development
+
+Supporting both web and iOS from a single codebase required careful separation of platform-specific functionality while maintaining a consistent user experience.
+
+### Serverless API Design
+
+To prevent exposing Google Cloud credentials on the client, a Vercel Serverless Function was implemented as a secure proxy layer between the frontend and Google Cloud TTS services.
+
+### Learning Experience Design
+
+One of the key challenges was designing a study workflow that balanced introducing new vocabulary while reinforcing previously learned words.
+
+The application uses spaced repetition concepts and quiz-based reinforcement to encourage long-term retention.
+
+### Scalable Frontend Architecture
+
+As the application grew, maintaining predictable state and reusable UI patterns became increasingly important. The project emphasized component reusability, type safety, and maintainable frontend architecture.
+
+---
+
+## What I Learned
+
+Through building and operating GRE Vocab Master, I gained hands-on experience in:
+
+- **Cross-platform development with React + Capacitor** — sharing a single codebase across Web PWA and iOS, with platform-specific code (Apple Sign-In, Capacitor plugins) cleanly isolated.
+- **Production monitoring and incident response with Sentry** — weekly-digest cadence across web and iOS, with every incident closed via a postmortem in [`.ai/OPERATIONS_LOG.md`](./.ai/OPERATIONS_LOG.md).
+- **Secure serverless API design** — a Vercel Function proxy keeps Google Cloud TTS credentials off the client, with the Web Speech API as a graceful fallback.
+- **PostgreSQL access control with Supabase Row-Level Security** — designed per-user RLS policies and learned the hard way that missing ones fail silently (see [`ARCHITECTURE.md §3.4`](./ARCHITECTURE.md)).
+- **Designing learning systems around real user feedback** — a single user email reshaped the quiz regex; inflection-aware matching pushed coverage from **80% → 99.9%** across all 1,560 words.
+
+---
+
+## AI-Augmented Engineering Workflow
+
+[Claude Code](https://claude.com/claude-code) is wired into this project as a system, not autocomplete — persistent context, custom workflows, and an incident-driven feedback loop.
+
+- **Central docs ([`.ai/`](./.ai/), ~2,700 lines)** — single source of truth across sessions. Includes [`ARCHITECTURE.md`](./ARCHITECTURE.md) (system invariants distilled from past incidents) and [`.ai/OPERATIONS_LOG.md`](./.ai/OPERATIONS_LOG.md) (production postmortems).
+- **Custom slash commands** — `/commit` gates commits behind type-check + review + TODO sync. `/oplog`, `/todo`, `/wrap` standardize routine writes.
+- **Specialized sub-agent** — i18n workstream runs in an isolated agent with blocking prerequisites and doc-update obligations, preventing drift between code and plan.
+- **Incident → invariant loop** — every production bug ships with a postmortem _and_ an architectural invariant to prevent recurrence. Example (2026-06-18): an RLS audit found `user_data.delete()` was a silent no-op due to a missing policy; the fix landed as a migration + ops-log entry + new `ARCHITECTURE.md §3.4` invariant in one coherent change.
+
+The leverage isn't speed — it's discipline. Every decision lands in a reviewable artifact.
+
+---
+
+## Local Development
 
 ### Prerequisites
 
 - Node.js 20+
-- npm or yarn
+- npm
 
 ### Installation
 
 ```bash
-# Clone the repository
-git clone <repository-url>
+git clone https://github.com/soojjung/gre-vocab-master.git
 cd GRE
-
-# Set Node version
 nvm use
-
-# Install dependencies
 npm install
-
-# Start the dev server
 npm run dev
 ```
 
-Open `http://localhost:5173` in your browser.
-
 ### Environment Variables
 
-Create a `.env` file with the following variables:
-
 ```bash
-# Supabase
-VITE_SUPABASE_URL=https://your-project-id.supabase.co
-VITE_SUPABASE_ANON_KEY=your_anon_key_here
-
-# Google Cloud TTS (set as Vercel environment variable)
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
 GOOGLE_TTS_API_KEY=
 ```
 
-### Build
-
-```bash
-# Production build
-npm run build
-
-# Preview the build
-npm run preview
-```
-
-### Other Scripts
-
-```bash
-# Lint
-npm run lint
-
-# Lint with auto-fix
-npm run lint:fix
-
-# Format code
-npm run format
-
-# Check formatting
-npm run format:check
-
-# Lint + format
-npm run fix
-```
-
-## Project Structure
-
-```
-├── api/             # Vercel Serverless Functions
-│   └── tts.ts       # Google Cloud TTS proxy
-└── src/
-    ├── components/  # Reusable components
-    ├── contexts/    # React Context (Auth, Quiz)
-    ├── data/        # Word data (1,560 words)
-    ├── hooks/       # Custom hooks
-    ├── lib/         # Supabase config, date utilities
-    ├── pages/       # Page components
-    └── types.ts     # TypeScript type definitions
-```
+---
 
 ## License
 
-This project was created for personal learning purposes.
+This project was created for educational and personal learning purposes.
 
-Word data sources:
+### Vocabulary Sources
 
 - [Manhattan Prep 1000 GRE Words](https://www.manhattanprep.com/gre/)
 - [Target Test Prep GRE Vocabulary](https://gre.blog.targettestprep.com/gre-vocabulary/)
