@@ -58,10 +58,12 @@
 
 | 테이블 | SELECT | INSERT | UPDATE | DELETE |
 |--------|--------|--------|--------|--------|
-| profiles | O | O | O | - |
-| user_data | O | O | O | - |
+| profiles | O | O | O | O |
+| user_data | O | O | O | O |
 | word_lists | O | O | O | O |
 | custom_words | O | O | O | O |
+
+> profiles / user_data 의 DELETE 정책은 `supabase-migration-delete-policies.sql` (2026-06-18) 로 추가됨. 그 전엔 client-side `.delete()` 가 RLS default-deny 로 no-op 였음 — `.ai/OPERATIONS_LOG.md` 2026-06-18 항목 참조.
 
 ---
 

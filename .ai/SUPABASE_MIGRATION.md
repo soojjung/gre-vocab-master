@@ -136,6 +136,17 @@ CREATE POLICY "Users can insert own data"
   ON user_data FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+-- DELETE 정책 (2026-06-18 추가, supabase-migration-delete-policies.sql 참조)
+-- AuthContext.deleteAccount() 의 client-side delete 가 RLS default-deny 로
+-- no-op 였던 사일런트 버그 패치. 이중 안전망 (코드 명시 삭제 + CASCADE) 복원.
+CREATE POLICY "Users can delete own profile"
+  ON profiles FOR DELETE
+  USING (auth.uid() = id);
+
+CREATE POLICY "Users can delete own data"
+  ON user_data FOR DELETE
+  USING (auth.uid() = user_id);
+
 -- 새 사용자 가입 시 자동으로 profiles 생성
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$

@@ -6,6 +6,24 @@
 
 ---
 
+## 2026-06-18 — 계정 삭제 시 `user_data` / `profiles` 의 client-side DELETE 가 사일런트 no-op (RLS default-deny)
+
+| 항목 | 내용 |
+|---|---|
+| **발견 경로** | `ARCHITECTURE.md` 초안 작성 중 §5 의 "RLS policies enforce per-user row access" 문장을 검증하다 발견. `AuthContext.deleteAccount()` 의 `.delete()` 호출과 `.ai/DATABASE_SCHEMA.md` RLS 매트릭스 (DELETE 정책 없음) 의 불일치를 확인하고 라이브 DB 의 `pg_policies` 를 직접 조회해 확정 |
+| **영향** | 데이터 유출은 없음 (`auth.users` CASCADE 가 결국 정리). 다만 의도된 "코드 명시 삭제 + CASCADE 이중 안전망" 이 단일 경로(CASCADE만) 로 축소되어 있던 상태. `rpc("delete_user")` 가 실패하면 `user_data` 가 고아 row 로 남는 시나리오에 대한 방어막이 부재했음. iOS 1.0 ~ 1.6 + 웹 전 버전 |
+| **원인** | 초기 마이그레이션(`.ai/SUPABASE_MIGRATION.md`) 작성 시 `profiles` 와 `user_data` 에 SELECT/INSERT/UPDATE 정책만 작성하고 DELETE 정책을 누락. PostgreSQL RLS 는 default-deny 이므로 정책 없는 작업은 0 rows affected 인 채 에러 없이 통과. 클라이언트 코드 (`AuthContext.tsx:312`) 는 `delete()` 가 성공한 줄 알고 다음 단계로 진행 |
+| **해결** | `supabase-migration-delete-policies.sql` 생성 — `profiles` 와 `user_data` 에 `auth.uid() = id` / `auth.uid() = user_id` 술어의 DELETE 정책 추가. 클라이언트 코드는 그대로 유지 (이중 안전망 의도 복원). `.ai/SUPABASE_MIGRATION.md`, `.ai/DATABASE_SCHEMA.md` 매트릭스 동기화 |
+| **후속 조치** | - ✅ 2026-06-18 `supabase-migration-delete-policies.sql` 라이브 적용 완료<br>- ✅ `pg_policies` 검증 쿼리로 4개 테이블(`custom_words`, `profiles`, `user_data`, `word_lists`) 모두 DELETE 정책 존재 확인<br>- ✅ `ARCHITECTURE.md §3.4` 에 RLS default-deny invariant 추가 |
+| **교훈** | - **RLS default-deny 는 사일런트하다.** 정책 없는 CRUD 호출은 에러 없이 0 rows affected. 클라이언트 입장에서는 성공으로 보임 — 명시 정책 누락은 Sentry 도 못 잡는 부류의 silent bug<br>- **문서와 라이브 DB 의 drift 점검은 정기 작업화 가치 있음**. 이번엔 `pg_policies` 한 줄 쿼리로 발견. CI 에 마이그레이션 파일 vs `pg_policies` diff 체크를 넣는 것도 후보<br>- **코드의 모든 CRUD 경로가 대응 정책을 갖는지** 점검하는 것이 RLS 활용의 기본 위생. 새 테이블/새 작업 추가 시 정책 체크리스트 필요 |
+
+관련 파일:
+- `supabase-migration-delete-policies.sql` (신규)
+- `src/contexts/AuthContext.tsx:312` (기존, 수정 없음)
+- `.ai/SUPABASE_MIGRATION.md`, `.ai/DATABASE_SCHEMA.md` (문서 동기화)
+
+---
+
 ## 2026-05-10 — SR 복습 모드 마지막 단어 답변 직후 TypeError (`undefined is not an object (evaluating 'n.word')`)
 
 | 항목 | 내용 |
