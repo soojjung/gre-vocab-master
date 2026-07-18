@@ -45,7 +45,7 @@ export function QuizPlayPage() {
   const t = useT();
   const { lang } = useLanguage();
   const { words } = useWords();
-  const { userData, loading } = useUserDataContext();
+  const { userData, loading, recordAnswer } = useUserDataContext();
   const { quizType, quizCount, setQuizResults } = useQuiz();
 
   const quizWords = useMemo(() => {
@@ -100,6 +100,8 @@ export function QuizPlayPage() {
 
       const isCorrect = index === question.correctIndex;
 
+      recordAnswer(String(question.word.id), isCorrect);
+
       if (isCorrect) {
         toast.success(t("quiz.correct"), { duration: TOAST_DURATION });
       } else {
@@ -118,7 +120,7 @@ export function QuizPlayPage() {
 
       timeoutRef.current = setTimeout(goToNext, TOAST_DURATION);
     },
-    [showResult, goToNext, t]
+    [showResult, goToNext, t, recordAnswer]
   );
 
   // 로딩 중이면 로딩 화면 표시

@@ -165,6 +165,8 @@ export function useStudySession(isReviewOnlyMode: boolean) {
       const reviewWord = reviewWords[reviewIndex];
       if (!reviewWord) return;
 
+      recordAnswer(String(reviewWord.id), correct);
+
       const isLastWord = reviewIndex === reviewWords.length - 1;
 
       if (isLastWord) {
@@ -187,7 +189,7 @@ export function useStudySession(isReviewOnlyMode: boolean) {
         setIsFlipped(false);
       }
     },
-    [reviewIndex, reviewWords]
+    [reviewIndex, reviewWords, recordAnswer]
   );
 
   const exitReviewMode = useCallback(() => {
@@ -207,6 +209,8 @@ export function useStudySession(isReviewOnlyMode: boolean) {
       const quizWord = studyWords[quizIndex];
       if (!quizWord) return;
 
+      recordAnswer(String(quizWord.id), correct);
+
       setSessionStats((prev) => ({
         correct: prev.correct + (correct ? 1 : 0),
         wrong: prev.wrong + (correct ? 0 : 1),
@@ -221,7 +225,7 @@ export function useStudySession(isReviewOnlyMode: boolean) {
         setSessionComplete(true);
       }
     },
-    [quizIndex, studyWords]
+    [quizIndex, studyWords, recordAnswer]
   );
 
   const exitQuizMode = useCallback(() => {

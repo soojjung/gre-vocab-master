@@ -18,7 +18,7 @@
 | 국제화      | 한국어/영어 외 추가 언어 검토 (일본어, 중국어 등 — `src/i18n/languages.ts` 확장)                      |
 | 국제화      | 프라이버시 정책 영문 법률 검토 (영문판 출시 전)                                                       |
 | iOS/배포    | Phase 7 — Xcode `.lproj` 등록 + App Store Connect 한·영 메타데이터 입력 (`.ai/APP_STORE_METADATA.md`) |
-| 개발자 경험 | 단위 테스트 환경(vitest) 도입 검토                                                                    |
+| 개발자 경험 | 단위 테스트 환경(vitest) 도입 — 2026-07-18 recordAnswer silent bug 회귀 방지 목적                     |
 | 개발자 경험 | `/commit` 시 코드 리뷰 에이전트 자동 트리거                                                           |
 | 개발자 경험 | `/commit` 시 문서 관리 서브 에이전트 자동 트리거 (README · `.ai/*` 일관성 점검)                       |
 | 개발자 경험 | Playwright 테스트 작성                                                                                |

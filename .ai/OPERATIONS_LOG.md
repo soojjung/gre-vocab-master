@@ -6,6 +6,24 @@
 
 ---
 
+## 2026-07-18 — "암기완료" 상태에 절대 도달하지 못하는 판정 로직 (`recordAnswer` 누락 3서피스)
+
+| 항목 | 내용 |
+|---|---|
+| **발견 경로** | 사용자 이메일 제보 (김소민 `lucypp3@naver.com`, 2026-07-10 수신 / 2026-07-18 확인). "복습퀴즈에서 안다고 표시해도, 퀴즈모드에서 두 버전 다 풀어서 맞춰도 암기완료 상태가 되는 단어가 없다"는 문의. 단어별 암기완료 임계값이 존재하는지 질문 형태로 제보 |
+| **영향** | 웹 전 버전 + iOS 1.0 ~ 1.6. `progress.status === "mastered"` 로 전환되는 서피스가 사실상 2개(기본 학습 `handleNext`, SR 복습 `handleSrReviewNext`)로만 제한되어 있었고, 사용자가 "학습" 목적으로 인식하는 나머지 3개 채널(복습 모드 "안다" 버튼 / 학습 페이지 내 퀴즈 모드 / 별도 퀴즈 페이지 fill-blank·multiple-choice)은 진도에 전혀 기여하지 못함. `VocabularyPage` 의 "암기완료" 필터가 사실상 도달 불가한 상태의 필터로 존재해 온 셈 |
+| **원인** | `src/hooks/useStudySession.ts` 의 `handleReviewAnswer`(라인 163), `handleQuizAnswer`(라인 205) 두 콜백이 `sessionStats` 임시 카운터만 업데이트하고 `recordAnswer()` 를 호출하지 않음. 별도 퀴즈 페이지(`src/pages/QuizPlayPage.tsx:94`) 의 `handleSelectOption` 도 결과를 `results` state 에 담아 `QuizResultPage` 로 넘기기만 하고 진도 커밋 없음. mastered 판정 조건(`correctCount >= 3 && interval >= 7`) 자체는 정상이었으나, 조건을 트리거할 입력 경로가 좁아서 도달 불가 |
+| **해결** | 세 곳에 `recordAnswer(String(word.id), correct)` 추가:<br>- `useStudySession.ts:163` `handleReviewAnswer` — 자기 신고("안다") 도 정답으로 인정<br>- `useStudySession.ts:205` `handleQuizAnswer` — 채점 결과 그대로 반영<br>- `QuizPlayPage.tsx:94` `handleSelectOption` — 문항별 개별 커밋 (fill-blank / multiple-choice 두 버전 각각 카운트)<br>`QuizPlayPage` 는 `useUserDataContext` 에서 `recordAnswer` 를 새로 구조분해. 타입 체크 통과. 소급 반영 없음(과거 세션 원본 미보존) |
+| **후속 조치** | - 김소민 님에게 다음 배포 이후 정상 반영 안내 회신 필요<br>- 남은 별도 이슈 2건: (a) 한 세션 안에서 같은 단어가 인터벌 사다리를 여러 번 승격돼 하루 만에 mastered 되는 문제 — `recordAnswer` 승격 로직에 "일 1회" 게이트 검토 필요, (b) 퀴즈 오답 시 이미 mastered 였던 단어가 `learning` 으로 강등되는 정책 — 사용자 관점 억울함 여부 확인 필요<br>- E2E/단위 테스트 부재로 "recordAnswer 미호출" 형태의 silent bug 를 CI 로 잡을 수 없음. mastered 전환이 실제로 트리거되는지 확인하는 회귀 시나리오 추가 검토 |
+| **교훈** | - **"조건은 있는데 트리거가 없다" 형태의 silent bug 는 Sentry 로 안 잡힘.** 예외도 없고 로그도 없고, 그저 사용자 진도가 안 오를 뿐. 인지 채널은 사용자 제보뿐 — 김소민 님 제보가 없었으면 인지 시점이 훨씬 뒤로 밀렸을 가능성<br>- **입력 경로(서피스)와 상태 전이 규칙을 별도로 나열해 매트릭스로 관리**하면 이런 종류의 누락을 잡기 쉬움. 서피스 × (correct/wrong) × 상태전이 매트릭스가 문서화되어 있으면 신규 서피스 추가 시 자동으로 대응 진도 업데이트가 필요하다는 것이 드러남<br>- 앞선 `harrow` 빈칸 인플렉션 이슈(2026-05-07)와 동일 패턴 — **에러가 아니라 "기대 동작이 안 일어난다" 형태의 이슈는 사용자 제보 채널 확보가 사실상 유일한 방어선** |
+
+관련 파일:
+- `src/hooks/useStudySession.ts:163,205` (신규 `recordAnswer` 호출)
+- `src/pages/QuizPlayPage.tsx:48,94` (context 구조분해 + 신규 호출)
+- `src/hooks/useUserData.ts:166` (mastered 판정 조건 — 변경 없음, 참고용)
+
+---
+
 ## 2026-06-18 — 계정 삭제 시 `user_data` / `profiles` 의 client-side DELETE 가 사일런트 no-op (RLS default-deny)
 
 | 항목 | 내용 |
