@@ -6,6 +6,19 @@
 
 ---
 
+## 2026-08-09 — 네이버 인앱 브라우저에서 `speechSynthesis` 미지원으로 `/study` ErrorBoundary (ReferenceError)
+
+| 항목 | 내용 |
+|---|---|
+| **발견 경로** | Sentry 알람 이메일 (이슈 `7660016717`, alert rule `16982005`). `ReferenceError: speechSynthesis is not defined` — release `b9ce72e05057`, production 환경, 1 user / 7 events / `/study?mode=review` |
+| **영향** | 네이버 앱 인앱 브라우저(User-Agent 에 `NAVER(inapp; search; 2100)` / Crosswalk 29 WebView / Android 16 / SM-S906N)로 배포 URL 을 열어 학습 페이지 진입 시 즉시 React ErrorBoundary 발동 → 흰 화면. 발음 재생 여부와 무관하게 `StudyPage` 렌더 초기 경로에서 `speakWord()` 가 호출되면서 참조 오류가 튀어 페이지 자체가 죽음. 웹 전 버전 영향, iOS 네이티브는 무관 (해당 WebView 사용 안 함) |
+| **원인** | `src/lib/tts.ts` 가 `speechSynthesis` 를 3곳(`speakWord` 시작부 `cancel()`, `audio.play()` catch 폴백 내 `new SpeechSynthesisUtterance` + `speak()`, `stopSpeaking()` 의 `cancel()`)에서 존재 여부 가드 없이 참조. 대부분의 데스크톱/모바일 브라우저에는 Web Speech API 가 있지만 **네이버 인앱 브라우저(Crosswalk 기반 WebView)에는 `window.speechSynthesis` 자체가 undefined** → 첫 참조에서 `ReferenceError` |
+| **해결** | `src/lib/tts.ts` 상단에 `hasSpeechSynthesis = typeof window !== "undefined" && "speechSynthesis" in window` 판정 상수 추가, 3곳 참조 모두 이 가드로 감쌈. 폴백(SpeechSynthesisUtterance) 블록 전체를 `if (!hasSpeechSynthesis) return;` 로 조기 반환. 주 경로(Google Cloud TTS via `/api/tts` → `HTMLAudioElement`) 는 변경 없음 — 네이버 인앱에서도 오디오 재생 자체는 정상 동작. 폴백만 조용히 스킵 |
+| **후속 조치** | - 배포 후 Sentry 이슈 `7660016717` resolve 처리 + 신규 이벤트 발생 없는지 24h 모니터링<br>- 로컬 검증은 `hasSpeechSynthesis = false` 강제로 재현 → StudyPage 정상 렌더 확인 완료 (dev 서버는 `/api/tts` 부재로 무음이지만 ReferenceError 소멸 확인이 목적)<br>- 국내 인앱 브라우저(네이버/카카오/인스타/페이스북) 매트릭스 테스트 채널 부재 — 실기기 QA 리스트에 추가 검토 필요 |
+| **교훈** | - **"모든 브라우저에 있는 웹 표준 API" 라는 가정은 국내 인앱 브라우저에서 자주 깨진다.** 네이버 인앱은 Crosswalk 기반이라 표준 window 객체 중 일부(Web Speech, WebRTC 일부, Web Share 등)가 통째로 누락. `typeof` 가드 없이 참조하면 첫 접근에서 ReferenceError 로 페이지 전체가 죽음<br>- **폴백 코드 자체가 참조 오류의 원인이 되는 안티패턴.** try/catch 로 감싸도 `SpeechSynthesisUtterance` 생성자 자체가 ReferenceError 를 던지므로 catch 도착 전에 상위로 튐 — 폴백 진입 자체를 가드해야 함<br>- Sentry alert 이 이번엔 24h 내 즉시 발동 — 이슈 발생 → 인지 → 수정 사이클이 짧아진 케이스. 알람 룰 튜닝 효과 확인됨 |
+
+---
+
 ## 2026-07-18 — "암기완료" 상태에 절대 도달하지 못하는 판정 로직 (`recordAnswer` 누락 3서피스)
 
 | 항목 | 내용 |
