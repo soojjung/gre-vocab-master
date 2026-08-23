@@ -1,8 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { App } from "@capacitor/app";
 import { supabase } from "@/lib/supabase";
 import { getTodayStringWithResetHour, getYesterdayStringWithResetHour, getLocalDateString } from "@/lib/date";
 import type { UserData, WordProgress, TodaySession } from "@/types";
 import { getDefaultUserData, SR_INTERVALS } from "@/types";
+
+// Debounce window for coalescing rapid setUserData calls (e.g. 30 answers in a session)
+// into a single upsert. Long enough to catch a burst of taps, short enough that a crash
+// / background-kill window has minimal unsaved data.
+const SAVE_DEBOUNCE_MS = 800;
 
 // Supabase DB row를 UserData로 변환
 function rowToUserData(row: { streak: number; last_study_date: string | null; target_date: string | null; daily_goal: number; reset_hour?: number; today_learned: string[]; onboarding_complete: boolean; auto_speak: boolean; locale?: string | null; today_session: TodaySession | null; progress: Record<string, WordProgress> }): UserData {
@@ -48,6 +54,15 @@ export function useUserData(userId?: string | null) {
   const [loading, setLoading] = useState(!!userId);
   const dataLoaded = useRef(false);
   const isSaving = useRef(false);
+  // Latest committed state, read by setUserData/completeOnboarding.
+  // Why: React updaters must be pure; we can't fire a supabase upsert inside
+  // setUserDataState((prev) => ...), because Strict Mode / concurrent re-runs
+  // duplicate the request (observed as two identical 59KB POSTs 4ms apart in Sentry).
+  const latestUserDataRef = useRef<UserData>(userData);
+  // Debounced save state. pendingSaveRef carries its own uid so a flush
+  // fires under the userId that scheduled it, even if userId changed since.
+  const saveTimerRef = useRef<number | null>(null);
+  const pendingSaveRef = useRef<{ data: UserData; uid: string } | null>(null);
 
   // userId 변경 감지
   if (userId !== prevUserId) {
@@ -87,6 +102,7 @@ export function useUserData(userId?: string | null) {
           if (insertError) {
             console.error("[useUserData] Error creating user data:", insertError);
           }
+          latestUserDataRef.current = defaultData;
           setUserDataState(defaultData);
         } else {
           const data = rowToUserData(row);
@@ -101,6 +117,7 @@ export function useUserData(userId?: string | null) {
             data.todayLearned = [];
           }
 
+          latestUserDataRef.current = data;
           setUserDataState(data);
         }
 
@@ -115,32 +132,104 @@ export function useUserData(userId?: string | null) {
     loadData();
   }, [userId]);
 
-  // Supabase에 저장
+  // Supabase 업서트 (5s abort timeout).
+  // Why: 프로덕션에서 이 요청이 응답 없이 매달리면 isSaving.current가 영구 true가 되고,
+  // 이후 load 경로(loadData 상단)가 차단돼 UI가 100초+ hang으로 관측됨 (Sentry).
+  const saveToSupabase = useCallback(async (data: UserData, uid: string) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    try {
+      const row = userDataToRow(data, uid);
+      const { error } = await supabase
+        .from("user_data")
+        .upsert(row, { onConflict: "user_id" })
+        .abortSignal(controller.signal);
+      if (error) {
+        console.error("[useUserData] Supabase save error:", error);
+      }
+    } catch (err) {
+      console.error("[useUserData] Supabase save exception:", err);
+    } finally {
+      clearTimeout(timeoutId);
+      isSaving.current = false;
+    }
+  }, []);
+
+  // Debounced-save helpers. flushPendingSave is safe to call anytime — no-op if nothing pending.
+  const flushPendingSave = useCallback(async () => {
+    if (saveTimerRef.current !== null) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
+    const pending = pendingSaveRef.current;
+    if (!pending) return;
+    pendingSaveRef.current = null;
+    isSaving.current = true;
+    await saveToSupabase(pending.data, pending.uid);
+  }, [saveToSupabase]);
+
+  const scheduleSave = useCallback(
+    (data: UserData, uid: string) => {
+      pendingSaveRef.current = { data, uid };
+      if (saveTimerRef.current !== null) {
+        clearTimeout(saveTimerRef.current);
+      }
+      saveTimerRef.current = window.setTimeout(() => {
+        saveTimerRef.current = null;
+        void flushPendingSave();
+      }, SAVE_DEBOUNCE_MS);
+    },
+    [flushPendingSave]
+  );
+
+  // Supabase에 저장 (debounced)
   const setUserData = useCallback(
     (updater: UserData | ((prev: UserData) => UserData)) => {
-      setUserDataState((prev) => {
-        const newData = typeof updater === "function" ? updater(prev) : updater;
+      const newData =
+        typeof updater === "function"
+          ? (updater as (prev: UserData) => UserData)(latestUserDataRef.current)
+          : updater;
+      latestUserDataRef.current = newData;
+      setUserDataState(newData);
 
-        // Supabase에 저장
-        if (userId) {
-          isSaving.current = true;
-          const row = userDataToRow(newData, userId);
-          supabase
-            .from("user_data")
-            .upsert(row, { onConflict: "user_id" })
-            .then(({ error }) => {
-              isSaving.current = false;
-              if (error) {
-                console.error("[setUserData] Supabase save error:", error);
-              }
-            });
-        }
-
-        return newData;
-      });
+      if (userId) {
+        scheduleSave(newData, userId);
+      }
     },
-    [userId]
+    [userId, scheduleSave]
   );
+
+  // Flush triggers: 앱 백그라운드 / 탭 hide / 페이지 종료 / 언마운트 / userId 변경 시
+  // 대기 중인 debounced 저장을 즉시 밀어냄. pendingSaveRef가 자기 uid를 들고 있어
+  // userId가 바뀌어도 이전 유저의 데이터가 이전 유저 앞으로 정확히 저장됨.
+  useEffect(() => {
+    const flush = () => {
+      void flushPendingSave();
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") flush();
+    };
+
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", onVisibility);
+    const listenerPromise = App.addListener("appStateChange", ({ isActive }) => {
+      if (!isActive) flush();
+    });
+
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      document.removeEventListener("visibilitychange", onVisibility);
+      void listenerPromise.then((l) => l.remove());
+      flush();
+    };
+  }, [flushPendingSave]);
+
+  useEffect(() => {
+    // userId 변경(로그아웃/전환) 시에도 이전 세션의 pending 저장을 밀어냄
+    return () => {
+      void flushPendingSave();
+    };
+  }, [userId, flushPendingSave]);
 
   // 단어 학습 결과 기록
   const recordAnswer = useCallback(
@@ -248,11 +337,11 @@ export function useUserData(userId?: string | null) {
     [setUserData]
   );
 
-  // 온보딩 완료
+  // 온보딩 완료 — 저장 확인이 필요한 경로라 debounce 우회 (즉시 await)
   const completeOnboarding = useCallback(
     async (targetDate: string, dailyGoal: number, resetHour: number = 3) => {
       const newData: UserData = {
-        ...userData,
+        ...latestUserDataRef.current,
         targetDate,
         dailyGoal,
         resetHour,
@@ -260,23 +349,21 @@ export function useUserData(userId?: string | null) {
       };
 
       // 로컬 상태 먼저 업데이트
+      latestUserDataRef.current = newData;
       setUserDataState(newData);
 
-      // Supabase에 직접 저장 (await로 완료 확인)
       if (userId) {
-        isSaving.current = true;
-        const row = userDataToRow(newData, userId);
-
-        const { error } = await supabase.from("user_data").upsert(row, { onConflict: "user_id" });
-
-        isSaving.current = false;
-
-        if (error) {
-          console.error("[completeOnboarding] Save error:", error);
+        // 대기 중인 debounce 저장은 stale이므로 취소하고 최신 값을 즉시 저장
+        if (saveTimerRef.current !== null) {
+          clearTimeout(saveTimerRef.current);
+          saveTimerRef.current = null;
         }
+        pendingSaveRef.current = null;
+        isSaving.current = true;
+        await saveToSupabase(newData, userId);
       }
     },
-    [userData, userId]
+    [userId, saveToSupabase]
   );
 
   // 데이터 초기화
