@@ -10,6 +10,9 @@ import { getBlankSentence } from "@/lib/blankSentence";
 import { useT, useLanguage } from "@/i18n";
 import { getMeaning, shouldShowExampleKo } from "@/lib/wordDisplay";
 
+// 한 문항에 필요한 최소 단어 수 (정답 1 + 오답 보기 3)
+const MIN_QUIZ_WORDS = 4;
+
 interface QuizQuestion {
   word: Word;
   options: Word[];
@@ -55,7 +58,16 @@ export function QuizPlayPage() {
     });
   }, [words, userData.progress]);
 
-  const questions = useMemo(() => generateQuestions(quizWords, quizCount), [quizWords, quizCount]);
+  // 문항은 단어가 준비된 시점에 한 번만 생성하고 세션 내내 고정한다.
+  // Why: 답을 고르면 recordAnswer() 가 userData.progress 를 새 객체로 바꾸고,
+  // 그 결과 quizWords → questions 가 재계산되며 문제와 보기가 통째로 다시 섞였다.
+  // showResult=true 인 채로 이게 일어나면 이전 문항의 selectedIndex 가 새 보기 위에 찍혀
+  // 빨강·초록이 동시에 뜨고 문제까지 바뀐다 (사용자 제보 2026-08-28).
+  // 생성은 단어가 준비된 첫 렌더에서 1회. 이후 quizWords 가 바뀌어도 다시 만들지 않는다.
+  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+  if (questions.length === 0 && quizWords.length >= MIN_QUIZ_WORDS) {
+    setQuestions(generateQuestions(quizWords, quizCount));
+  }
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -133,8 +145,17 @@ export function QuizPlayPage() {
   }
 
   // 퀴즈 단어가 부족하면 선택 페이지로 리다이렉트
-  if (quizWords.length < 4) {
+  if (quizWords.length < MIN_QUIZ_WORDS) {
     return <Navigate to="/quiz" replace />;
+  }
+
+  // 문항 생성 직전 프레임 — 아래 리다이렉트로 새지 않도록 로딩 화면 유지
+  if (questions.length === 0) {
+    return (
+      <div className="min-h-dvh bg-white flex items-center justify-center pt-[env(safe-area-inset-top)]">
+        <div className="w-8 h-8 border-4 border-gray-200 border-t-black rounded-full animate-spin" />
+      </div>
+    );
   }
 
   const currentQuestion = questions[currentIndex];

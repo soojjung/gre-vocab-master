@@ -65,7 +65,17 @@ function App() {
                   {/* 나머지 모든 경로 */}
                   <Route path="*" element={<ProtectedRoutes />} />
                 </Routes>
-                <Toaster position="top-center" richColors />
+                {/*
+                  토스트는 퀴즈 페이지에서만 쓴다. sonner 기본 오프셋(모바일 16px / 데스크톱 24px)으로는
+                  아이폰 상태바에 가려지고, safe-area 만 더하면 이번엔 퀴즈 헤더(닫기·진행 표시)를 덮는다.
+                  → 헤더의 닫기·진행 표시(pt ~ pt+24px) 바로 아래에 오도록 28px 만 내린다.
+                */}
+                <Toaster
+                  position="top-center"
+                  richColors
+                  offset={{ top: "calc(max(2rem, env(safe-area-inset-top)) + 28px)" }}
+                  mobileOffset={{ top: "calc(max(2rem, env(safe-area-inset-top)) + 28px)" }}
+                />
               </QuizProvider>
             </WordsProvider>
           </AuthProvider>

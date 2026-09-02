@@ -67,10 +67,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   useEffect(() => {
     // 현재 세션 확인
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        setUser(session?.user ?? null);
+        setLoading(false);
+      })
+      .catch((error) => {
+        // 세션 확인 실패(네트워크 단절, auth 락 경합 등)해도 로딩은 반드시 풀어
+        // 무한 로딩 대신 로그인 화면을 보여준다. onAuthStateChange 가 이어서 복구.
+        console.error("[Auth] 세션 확인 오류:", error);
+        setLoading(false);
+      });
 
     // 인증 상태 변화 구독
     const {

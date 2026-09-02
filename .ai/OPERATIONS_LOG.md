@@ -6,6 +6,40 @@
 
 ---
 
+## 2026-09-02 — 퀴즈에서 답을 고를 때마다 문항 전체가 재생성 (빨강·초록 동시 표시) + iOS 토스트가 상태바에 가려짐
+
+| 항목 | 내용 |
+|---|---|
+| **발견 경로** | 사용자 이메일 제보 (HYENNIE `ekdnsaosldk@naver.com`, 2026-08-28 오전 9:17 / 9:20 두 통, 아이폰 스크린샷 첨부). "정답을 선택해도 갑자기 보기들이 바뀌면서 이상하게 빨강과 초록칸이 같이 뜨다가 넘어가요", "정답입니다/오답입니다 표시가 너무 위쪽에 떠서 가려져 보여요". 첨부 스크린샷에 토스트는 `정답입니다!` 인데 A 는 빨강, C 는 초록으로 동시 표시된 상태가 그대로 찍혀 있어 원인 특정의 결정적 단서가 됨 |
+| **영향** | 웹 전 버전 + iOS 1.0 ~ 1.7. 퀴즈 두 모드(fill-blank / multiple-choice) 모두. ① 답을 고른 직후 1.5초 피드백 구간에서 문제·보기가 통째로 다른 것으로 바뀌고, 이전 문항 기준 `selectedIndex` 가 새 보기 위에 찍혀 정답을 맞혀도 빨간 칸이 같이 뜸 → **무엇이 정답이었는지 알 수 없어 학습 자체가 불가능**. 매 문항 재추첨이므로 이미 푼 단어가 다시 나오거나 특정 단어가 반복 출제되기도 함. 단, `recordAnswer` / `results` 는 렌더 클로저의 이전 `question` 객체를 쓰므로 **진도 기록과 결과 페이지 채점은 정상**이었음 (표시만 깨짐)<br>② 아이폰에서 토스트가 상태바/노치 아래로 파고들어 잘려 보임 |
+| **원인** | ① `QuizPlayPage` 의 `questions` 가 `useMemo(..., [quizWords, quizCount])` 이고 `quizWords` 는 `useMemo(..., [words, userData.progress])`. 답을 고르면 `recordAnswer()` 가 `progress: {...prev.progress, [wordId]: newProgress}` 로 **새 객체를 반환** → `quizWords` → `questions` 가 연쇄 재계산되며 `generateQuestions()` 가 다시 셔플. `currentIndex` / `selectedIndex` / `showResult` 는 그대로 남아 **데이터(문항)와 표시 상태(선택 결과)의 생명주기가 어긋남**<br>② sonner 의 뷰포트 오프셋 기본값이 모바일 16px / 데스크톱 24px 고정 (`MOBILE_VIEWPORT_OFFSET`). safe-area 를 반영하지 않아 노치 기기에서 상태바 영역에 겹침 |
+| **해결** | - `src/pages/QuizPlayPage.tsx`: 문항을 **단어가 준비된 첫 렌더에서 1회만 생성**하고 세션 내내 고정 (`useState` + 렌더 중 상태 조정). ref 로 캡처하거나 `useEffect` 에서 생성하는 방식은 이 저장소의 eslint(react-hooks v7) `refs` / `set-state-in-effect` 규칙에 걸려 불가 — `useUserData.ts` 가 이미 쓰는 렌더 중 조정 패턴에 맞춤. 생성 직전 1프레임에 `/quiz` 로 튕기지 않도록 로딩 가드 추가, 매직넘버 4 는 `MIN_QUIZ_WORDS` 상수로 정리<br>- `src/App.tsx`: `<Toaster>` 에 `offset`/`mobileOffset` = `calc(max(2rem, env(safe-area-inset-top)) + 28px)`. 퀴즈 헤더의 상단 패딩과 같은 식을 써서 닫기·진행 표시 아래에 오도록 맞춤 (72px → 32px → 28px 로 실기기 보며 조정) |
+| **후속 조치** | - 실기기(iPhone, Capacitor 네이티브 빌드) 확인 완료: 정답 선택 시 초록만 표시, 토스트가 상태바 아래에 온전히 노출<br>- **남은 확인**: 오답 케이스, 연속 3~4문항 진행 시 문제·보기 고정 여부<br>- 제보자 HYENNIE 님에게 회신 + 다음 배포 반영 안내 필요<br>- iOS `MARKETING_VERSION` bump 후 재제출 필요<br>- 퀴즈 흐름에 회귀 테스트 부재 — "답을 고른 뒤 문항이 그대로인가" 같은 시나리오는 타입체크·lint 로 절대 안 잡힘 |
+| **교훈** | - **파생 상태를 휘발성 의존성으로 memo 하면 세션 도중 재생성된다.** `userData.progress` 처럼 사용자의 행동마다 새 객체가 되는 값을 `useMemo` 체인 상류에 두면, 그 하류의 "한 번만 만들어야 하는 것"(퀴즈 문항, 셔플 결과, 추천 목록 등)이 조용히 다시 만들어짐<br>- **데이터와 그 데이터를 가리키는 인덱스·선택 상태는 생명주기를 같이 가야 한다.** `questions` 는 재생성되는데 `selectedIndex` 는 유지되니 두 세대가 겹쳐 그려졌음. 인덱스로 참조하는 구조는 이 어긋남에 특히 취약<br>- **에러가 안 나는 UI 버그는 Sentry·타입체크·lint 어디에도 안 걸린다.** 이번에도 인지 채널은 사용자 이메일 하나뿐이었고, 첨부 스크린샷이 없었으면 원인 특정에 훨씬 오래 걸렸을 것 — 제보 시 스크린샷 요청을 기본으로 두는 게 유효<br>- **서드파티 UI 라이브러리의 기본 오프셋은 safe-area 를 모른다.** 노치 기기 대응은 라이브러리가 아니라 우리가 명시해야 함 |
+
+관련 파일:
+- `src/pages/QuizPlayPage.tsx` (문항 1회 생성 고정, `MIN_QUIZ_WORDS`, 생성 직전 로딩 가드)
+- `src/App.tsx` (`<Toaster>` safe-area 오프셋)
+
+---
+
+## 2026-09-02 — supabase auth `navigatorLock` 획득 타임아웃이 unhandled rejection 으로 새어나가 `/study` 무한 로딩 (`AbortError: signal is aborted without reason`)
+
+| 항목 | 내용 |
+|---|---|
+| **발견 경로** | Sentry 이슈 `GRE-VOCAB-MASTER-8` (event `42aac851`, 2026-08-31 발생 / 09-01 확인). `AbortError: signal is aborted without reason` — release `af3e60670ea6`, production, `/study`, 1 user / 1 event, Chrome 151 / macOS. mechanism `auto.browser.global_handlers.onunhandledrejection`, handled=false |
+| **영향** | 웹 전 버전 (iOS 네이티브 WebView 포함 가능). 저빈도(8시간 1건 / 1명) 지만 노이즈가 아니라 실제 사용자 영향 있음 — Session Replay 상 해당 세션 화면이 **빈 페이지 + 로딩 스피너** 상태였고, 이는 `AuthContext` 의 `getSession()` 이 거절되어 `loading` 이 안 풀리는 증상과 일치 (리플레이가 10초짜리라 "끝내 안 풀렸다"까지 단정은 불가). 절전/백그라운드 복귀나 다른 탭이 auth 락을 쥐고 있는 상황에서 재현 |
+| **원인** | `@supabase/auth-js@2.91.1` 의 `navigatorLock` (`lib/locks.js:98`) 은 `acquireTimeout`(기본 10초) 경과 시 `AbortController.abort()` 로 `navigator.locks.request` 를 취소하는데, 이때 브라우저가 던지는 `DOMException(AbortError)` 을 자기 타입인 `NavigatorLockAcquireTimeoutError` 로 변환하지 않고 그대로 흘려보냄. `GoTrueClient._handleVisibilityChange` 는 리스너를 `async () => await this._onVisibilityChanged(false)` 로 등록해 **아무도 await 하지 않는 promise** 를 만들고, `_onVisibilityChanged` 에도 catch 가 없어 그대로 `unhandledrejection` 으로 탈출. 같은 에러가 `getSession()` 경로로 오면 `AuthContext` 의 `.then()` 이 실행되지 않아 `loading` 이 `true` 로 고정 (catch 없는 floating promise) |
+| **해결** | - `src/lib/supabase.ts`: `createClient` 의 `auth.lock` 에 커스텀 `resilientNavigatorLock` 주입. `navigatorLock` 을 감싸 `acquireTimeout > 0 && err.name === "AbortError"` 인 경우에만 경고 로그 후 락 없이 `fn()` 실행 — auth-js 가 "LockManager 스펙 미준수 브라우저" 에서 쓰는 폴백과 동일한 처리. `navigator.locks` 부재 환경은 `lockNoOp` 과 동일하게 가드<br>- `src/contexts/AuthContext.tsx`: `getSession().then()` 에 `.catch()` 추가 — 세션 확인 실패 시에도 `loading` 을 풀어 무한 스피너 대신 로그인 화면으로 폴백, 이후 `onAuthStateChange` 가 복구 |
+| **후속 조치** | - 로컬 검증 완료: 콘솔에서 해당 락(`lock:sb-<ref>-auth-token`)을 25초 점유 + `visibilitychange` 디스패치 → 10초 뒤 unhandled AbortError 없이 경고 한 줄만 출력되는 것 확인<br>- **배포 후 Sentry 이슈를 "Resolve in the next release" 로 마킹 필요.** 저빈도 이슈라 "며칠 조용함" 만으로는 판정 불가 — regression 자동 재오픈에 의존<br>- auth-js 업스트림에 AbortError → `NavigatorLockAcquireTimeoutError` 변환 및 visibilitychange 핸들러 catch 누락 이슈 보고 검토<br>- 락 없이 진행하는 폴백은 다중 탭 동시 토큰 갱신 가능성이 있음(리프레시 토큰 회전). 10초 경합 이후에만 발생하고 auth-js 자체 폴백과 동일한 수준이지만, 배포 후 로그인 풀림 관련 제보 여부 모니터링 |
+| **교훈** | - **서드파티 라이브러리가 이벤트 리스너 안에서 만드는 unawaited promise 는 우리 코드에 catch 지점이 없다.** try/catch 로 감쌀 호출부 자체가 없으므로, 유일한 개입 지점은 라이브러리가 노출한 확장 포인트(여기서는 `auth.lock` 옵션)뿐<br>- **`.then()` 만 달고 `.catch()` 를 안 단 floating promise 는 로딩 상태를 영구 고착시킨다.** 에러가 Sentry 에 찍히는 것보다 "스피너가 안 풀린다"는 사용자 영향이 더 크다 — 로딩 플래그를 푸는 코드는 항상 성공/실패 양쪽 경로에 있어야 함<br>- **Sentry 의 "1 event / 1 user" 를 노이즈로 넘기면 안 되는 경우가 있다.** 이번 건은 Session Replay 를 열어보고서야 사용자가 흰 화면을 보고 있었다는 게 드러남 — 저빈도라도 replay/trace 확인이 영향 판정을 바꿈 |
+
+관련 파일:
+- `src/lib/supabase.ts` (커스텀 `lock` 주입)
+- `src/contexts/AuthContext.tsx` (`getSession()` catch 추가)
+
+---
+
 ## 2026-08-09 — 네이버 인앱 브라우저에서 `speechSynthesis` 미지원으로 `/study` ErrorBoundary (ReferenceError)
 
 | 항목 | 내용 |
