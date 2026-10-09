@@ -77,9 +77,9 @@ Native iOS app via Capacitor, plus the web build as a PWA.
 
 Real-world outcomes from building, shipping, and operating GRE Vocab Master in production.
 
-- **~30 active iOS users** — small enough to know each, large enough to surface bugs that synthetic tests miss.
+- **116 registered users** (as of October 2026) — small enough to know each, large enough to surface bugs that synthetic tests miss.
 - **User-reported regex bug → English-morphology-aware fix.** A learner emailed a screenshot showing the answer (`harrow`) appearing verbatim in `...harrowed the viewers`. The blank-fill quiz was using `\bword\b` exact-match, blind to English inflection. I rebuilt the matcher in [`src/lib/blankSentence.ts`](./src/lib/blankSentence.ts) to handle four morphology families — `-ed/-ing/-ation`, `y → i`, silent-`e` drop, consonant doubling — moving blank-quiz coverage from **80% → 99.9%** across all 1,560 words. Shipped as v1.4 the same day. ([postmortem](./.ai/OPERATIONS_LOG.md))
-- **6 versions shipped** (1.0 → 1.6) over 5 months — every release tied to a user-facing feature or an incident postmortem.
+- **8 versions shipped** (1.0 → 1.8) over 8 months — every release tied to a user-facing feature or an incident postmortem.
 - **1,560 curated GRE words** localized in **English + Korean**, with native iOS metadata and screenshots in both locales.
 - **5 production issues investigated and resolved**, each documented with root cause analysis and lessons learned in [`.ai/OPERATIONS_LOG.md`](./.ai/OPERATIONS_LOG.md).
 - **Production observability** via Sentry on web + iOS — a TypeError (`undefined is not an object`) surfaced through the weekly digest within 7 days and shipped as version 1.5.
