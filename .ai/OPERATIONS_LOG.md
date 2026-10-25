@@ -6,6 +6,19 @@
 
 ---
 
+## 2026-10-25 — iOS 앱에서 `/api/tts` 상대경로가 항상 실패 → 매번 `speechSynthesis` 폴백 → 오디오 세션 동기 활성화로 App Hang 8초
+
+| 항목 | 내용 |
+|---|---|
+| **발견 경로** | Sentry 이슈 `GRE-VOCAB-MASTER-7` (`7687320615`). `App Hang Fully Blocked: App hanging between 8.1 and 8.9 seconds` — release `com.sooya.grevocab@1.8+1`, production, 2 events / 1 user (2026-08-23, 2026-10-18) |
+| **영향** | - 직접 영향: iOS 사용자 1명, 발음 재생 시 앱이 8초 넘게 완전히 멈춤 (iPhone13,2 / iOS 26.5, 이벤트 시점 free_memory 약 112MB)<br>- 잠재 영향: **iOS 앱 사용자 전원**이 출시 이후 Google Cloud TTS 대신 iOS 시스템 음성으로 발음을 들어 왔음. 재생은 됐기 때문에 기능 장애로 보이지 않았음 |
+| **원인** | `src/lib/tts.ts` 의 `new Audio('/api/tts?text=...')` 상대경로가 Capacitor iOS 에서는 `capacitor://localhost/api/tts` 로 해석되는데, 앱 번들에는 Vercel 함수가 없음 → `audio.play()` 가 항상 reject → catch 블록의 `speechSynthesis.speak()` 폴백이 매번 실행됨. WebKit 의 Web Speech 구현이 내부의 AVSpeechSynthesizer 를 거쳐 **메인 스레드에서** `AVAudioSession privateSetActive` 를 호출하고 mediaserverd 의 XPC 동기 응답을 기다림 (스택: `AXDispatchTimer` → `AXAVSpeechSynthesisVoiceFromTTSAXResource` → `-[AVAudioSession privateSetActive:...]` → `xpc_connection_send_message_with_reply_sync`). 메모리 부족·오디오 경로 전환 등으로 mediaserverd 가 늦게 응답하면 그동안 앱 전체가 멈춤 |
+| **해결** | `src/lib/tts.ts` 에 `TTS_BASE = Capacitor.isNativePlatform() ? "https://gre-vocab-master.vercel.app" : ""` 를 추가하고, 네이티브에서는 절대 URL 로 TTS 를 호출하도록 변경. `api/tts.ts` 에는 이미 CORS `*` 가 설정되어 있고, `<audio>` 재생에는 CORS 가 필요 없음. 프로덕션 엔드포인트가 `200 audio/mp3` 를 반환하는 것 확인, `tsc --noEmit` 통과. 이제 폴백은 네트워크 오류 같은 예외 상황에서만 실행됨 |
+| **후속 조치** | - ✅ iOS 1.9 (1) TestFlight 실기기에서 Google 음성(en-US-Standard-D)으로 재생되는 것 확인 완료<br>- 배포 후 Sentry `GRE-VOCAB-MASTER-7` resolve, 재발 여부 모니터링<br>- (선택) 네이티브에서는 `speechSynthesis` 폴백 자체를 끄거나, `cancel()` 은 `speechSynthesis.speaking` 일 때만 호출하도록 조정 검토 |
+| **교훈** | - **웹용 상대경로 API(`/api/*`)는 Capacitor 네이티브에서 깨진다.** origin 이 `capacitor://localhost` 이기 때문. 네이티브에서 호출하는 서버 API 는 모두 절대 URL 로 써야 함<br>- **폴백이 조용히 동작하면 장애가 수개월 동안 숨는다.** 주 경로가 실패해도 폴백 덕분에 소리가 나서 아무도 알아채지 못했고, 결국 폴백 쪽 부작용(App Hang)으로 드러남. 폴백에 들어갈 때 Sentry breadcrumb 이나 경고를 남기면 더 빨리 발견할 수 있음<br>- App Hang 스택에 우리 코드 프레임이 없어도, 스레드 이름(`AXSpeech`, `AudioSession - RootQueue`)을 보면 어떤 웹 API 가 원인인지 거꾸로 추적할 수 있음 |
+
+---
+
 ## 2026-09-02 — 퀴즈에서 답을 고를 때마다 문항 전체가 재생성 (빨강·초록 동시 표시) + iOS 토스트가 상태바에 가려짐
 
 | 항목 | 내용 |

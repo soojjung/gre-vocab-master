@@ -1,5 +1,12 @@
+import { Capacitor } from "@capacitor/core";
+
 // 현재 재생 중인 오디오
 let currentAudio: HTMLAudioElement | null = null;
+
+// 네이티브 앱(capacitor://localhost)에는 /api 라우트가 없으므로 Vercel 절대 URL 사용
+const TTS_BASE = Capacitor.isNativePlatform()
+  ? "https://gre-vocab-master.vercel.app"
+  : "";
 
 // 네이버 인앱 등 일부 WebView에는 Web Speech API 자체가 없음
 const hasSpeechSynthesis =
@@ -19,7 +26,7 @@ export function speakWord(word: string) {
     speechSynthesis.cancel();
   }
 
-  const audio = new Audio(`/api/tts?text=${encodeURIComponent(word)}`);
+  const audio = new Audio(`${TTS_BASE}/api/tts?text=${encodeURIComponent(word)}`);
   currentAudio = audio;
 
   audio.play().catch(() => {
